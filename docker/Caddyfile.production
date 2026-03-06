@@ -1,0 +1,50 @@
+{
+    frankenphp
+    admin off
+    order php_server before file_server
+}
+
+# Ganti yourdomain.com dengan domain asli
+yourdomain.com {
+    root * /app/public
+    encode zstd gzip
+
+    # Security headers
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+    }
+
+    # Cache static files
+    @static {
+        file
+        path *.css *.js *.png *.jpg *.jpeg *.gif *.webp *.ico *.svg *.woff *.woff2 *.ttf
+    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    # Blokir akses ke file sensitif
+    @sensitive {
+        path /.env* /storage/* /core/* /config/* /routes/* /app/*
+    }
+    respond @sensitive 404
+
+    route {
+        @notStatic not file
+        rewrite @notStatic /index.php?url={path}&{query}
+        php_server
+    }
+
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 10MB
+            roll_keep 5
+        }
+        format console
+        level WARN
+    }
+}

@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Environment (jangan masuk ke image!)
+.env
+
+# Docker files sendiri
+docker-compose*.yml
+Dockerfile
+
+# Dokumentasi
+README.md
+*.md
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs
+*.log
+/logs
+
+# Test files
+/tests
+phpunit.xml
+
+# Node (kalau ada)
+node_modules
+npm-debug.log

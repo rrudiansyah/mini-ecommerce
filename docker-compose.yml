@@ -1,0 +1,90 @@
+services:
+
+  # ─────────────────────────────────────────
+  # APP — FrankenPHP
+  # ─────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecommerce_app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Hot reload: sync kode langsung tanpa rebuild
+      - .:/app
+      # Persist uploads
+      - uploads_data:/app/public/uploads
+    environment:
+      - SERVER_NAME=:80
+      - TZ=Asia/Jakarta
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - ecommerce_network
+
+  # ─────────────────────────────────────────
+  # DATABASE — MySQL 8
+  # ─────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: ecommerce_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: ecommerce_builder
+      MYSQL_USER: ecommerce_user
+      MYSQL_PASSWORD: ecommerce_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      # Persist data MySQL
+      - db_data:/var/lib/mysql
+      # Auto-import schema saat container pertama dibuat
+      - ./database.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-psecret"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ecommerce_network
+
+  # ─────────────────────────────────────────
+  # phpMyAdmin — GUI Database (development)
+  # ─────────────────────────────────────────
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: ecommerce_pma
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: secret
+      UPLOAD_LIMIT: 100M
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - ecommerce_network
+
+# ─────────────────────────────────────────
+# VOLUMES
+# ─────────────────────────────────────────
+volumes:
+  db_data:
+    driver: local
+  uploads_data:
+    driver: local
+
+# ─────────────────────────────────────────
+# NETWORKS
+# ─────────────────────────────────────────
+networks:
+  ecommerce_network:
+    driver: bridge

@@ -1,0 +1,51 @@
+{
+    frankenphp
+    admin off
+
+    # Daftarkan php_server sebagai ordered handler
+    order php_server before file_server
+}
+
+:80 {
+    root * /app/public
+
+    # Kompresi
+    encode zstd gzip
+
+    # Security headers
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    # Cache static files
+    @static {
+        file
+        path *.css *.js *.png *.jpg *.jpeg *.gif *.webp *.ico *.svg *.woff *.woff2 *.ttf
+    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    # Blokir akses ke file & folder sensitif
+    @blocked {
+        path /.env* /storage/* /core/* /config/* /routes/* /app/* /*.sql /docker*
+    }
+    respond @blocked 404
+
+    route {
+        # Rewrite URL ke index.php (MVC router)
+        @notStatic not file
+        rewrite @notStatic /index.php?url={path}&{query}
+
+        # Jalankan PHP
+        php_server
+    }
+
+    log {
+        output stdout
+        format console
+        level INFO
+    }
+}

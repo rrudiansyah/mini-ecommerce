@@ -1,0 +1,80 @@
+# =============================================================
+# ECOMMERCE BUILDER — .gitignore
+# =============================================================
+
+# ─────────────────────────────────────────
+# WAJIB: File rahasia — JANGAN pernah di-commit
+# ─────────────────────────────────────────
+.env
+.env.production
+.env.local
+.env.*.local
+
+# ─────────────────────────────────────────
+# Upload pengguna — data runtime, bukan kode
+# ─────────────────────────────────────────
+public/uploads/products/
+public/uploads/logos/
+public/uploads/temp/
+
+# Biarkan folder uploads tetap ada di repo (dengan .gitkeep)
+!public/uploads/.gitkeep
+!public/uploads/.htaccess
+
+# ─────────────────────────────────────────
+# Storage runtime (logs, rate limit, cache)
+# ─────────────────────────────────────────
+storage/
+!storage/.gitkeep
+
+# ─────────────────────────────────────────
+# Dependency & build artifacts
+# ─────────────────────────────────────────
+vendor/
+node_modules/
+*.lock
+!composer.lock
+
+# ─────────────────────────────────────────
+# Docker volumes & override lokal
+# ─────────────────────────────────────────
+docker-compose.override.yml
+
+# ─────────────────────────────────────────
+# IDE & editor
+# ─────────────────────────────────────────
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─────────────────────────────────────────
+# OS & temp files
+# ─────────────────────────────────────────
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+tmpclaude-*
+
+# ─────────────────────────────────────────
+# PHP artifacts
+# ─────────────────────────────────────────
+*.cache
+.php_cs.cache
+.phpunit.result.cache
+
+# ─────────────────────────────────────────
+# Yang TETAP masuk repo (override ignore)
+# ─────────────────────────────────────────
+!.env.example
+!docker-compose.yml
+!docker-compose.prod.yml
+!database.sql
+!PRODUCTION_CHECKLIST.md
+!README.md
