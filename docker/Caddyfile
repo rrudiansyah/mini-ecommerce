@@ -35,6 +35,13 @@
     respond @blocked 404
 
     route {
+        # Landing page: serve index.html langsung untuk root /
+        @landingPage {
+            path /
+            path /index.html
+        }
+        rewrite @landingPage /index.html
+
         # Rewrite URL ke index.php (MVC router)
         @notStatic not file
         rewrite @notStatic /index.php?url={path}&{query}
