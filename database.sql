@@ -359,6 +359,10 @@ LOCK TABLES `super_admins` WRITE;
 INSERT INTO `super_admins` VALUES (1,'Super Admin','superadmin','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','2026-03-05 04:57:54');
 /*!40000 ALTER TABLE `super_admins` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Dumping routines for database 'ecommerce_builder'
+--
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -369,4 +373,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-08  0:21:21
+-- Dump completed on 2026-03-08  0:39:13
