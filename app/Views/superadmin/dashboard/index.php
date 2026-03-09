@@ -22,39 +22,42 @@
 </div>
 
 <div class="section">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
-        <h2>Semua Toko</h2>
+    <div class="page-header" style="margin-bottom:16px">
+        <h2 style="margin:0">Semua Toko</h2>
         <a href="<?= BASE_URL ?>/superadmin/stores/create" class="btn btn-primary">+ Tambah Toko</a>
     </div>
-    <table class="table">
-        <thead>
-            <tr><th>Toko</th><th>Niche</th><th>URL Publik</th><th>Produk</th><th>Pesanan</th><th>Omzet</th><th>Status</th><th>Aksi</th></tr>
-        </thead>
-        <tbody>
-        <?php foreach ($stores as $s): ?>
-        <tr>
-            <td><strong><?= htmlspecialchars($s['name']) ?></strong><br>
-                <small style="color:#64748b"><?= htmlspecialchars($s['address'] ?? '-') ?></small>
-            </td>
-            <td><span class="badge badge-proses"><?= $s['niche'] ?></span></td>
-            <td>
-                <a href="<?= BASE_URL ?>/toko/<?= $s['slug'] ?>" target="_blank"
-                   style="color:#3b82f6; font-size:12px; font-family:monospace">
-                    /toko/<?= $s['slug'] ?>
-                </a>
-            </td>
-            <td><?= $s['product_count'] ?></td>
-            <td><?= $s['order_count'] ?></td>
-            <td>Rp <?= number_format($s['total_revenue'], 0, ',', '.') ?></td>
-            <td><span class="badge badge-<?= $s['is_active'] ? 'selesai' : 'batal' ?>"><?= $s['is_active'] ? 'Aktif' : 'Nonaktif' ?></span></td>
-            <td>
-                <a href="<?= BASE_URL ?>/superadmin/stores/toggle/<?= $s['id'] ?>" class="btn btn-sm"
-                   onclick="return confirm('<?= $s['is_active'] ? 'Nonaktifkan' : 'Aktifkan' ?> toko ini?')">
-                    <?= $s['is_active'] ? '⏸ Nonaktifkan' : '▶ Aktifkan' ?>
-                </a>
-            </td>
-        </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr><th>Toko</th><th>Niche</th><th>URL Publik</th><th>Produk</th><th>Pesanan</th><th>Omzet</th><th>Status</th><th>Aksi</th></tr>
+            </thead>
+            <tbody>
+            <?php foreach ($stores as $s): ?>
+            <tr>
+                <td>
+                    <strong><?= htmlspecialchars($s['name']) ?></strong><br>
+                    <small style="color:var(--muted)"><?= htmlspecialchars($s['address'] ?? '-') ?></small>
+                </td>
+                <td><span class="badge badge-proses"><?= $s['niche'] ?></span></td>
+                <td>
+                    <a href="<?= BASE_URL ?>/toko/<?= $s['slug'] ?>" target="_blank"
+                       style="color:var(--sky);font-size:12px;font-family:monospace">
+                        /toko/<?= $s['slug'] ?> ↗
+                    </a>
+                </td>
+                <td><?= $s['product_count'] ?></td>
+                <td><?= $s['order_count'] ?></td>
+                <td style="white-space:nowrap">Rp <?= number_format($s['total_revenue'], 0, ',', '.') ?></td>
+                <td><span class="badge badge-<?= $s['is_active'] ? 'selesai' : 'batal' ?>"><?= $s['is_active'] ? 'Aktif' : 'Off' ?></span></td>
+                <td>
+                    <a href="<?= BASE_URL ?>/superadmin/stores/toggle/<?= $s['id'] ?>" class="btn btn-sm"
+                       onclick="return confirm('<?= $s['is_active'] ? 'Nonaktifkan' : 'Aktifkan' ?> toko ini?')">
+                        <?= $s['is_active'] ? '⏸ Off' : '▶ On' ?>
+                    </a>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 </div>
