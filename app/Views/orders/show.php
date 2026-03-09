@@ -92,6 +92,7 @@
     </div>
 
     <form method="POST" action="<?= BASE_URL ?>/orders/record-payment/<?= $order['id'] ?>">
+        <?php echo $csrf_field ?? ''; ?>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:flex-end;margin-bottom:16px">
             <div class="form-group" style="margin:0">
                 <label>Status Pembayaran</label>
