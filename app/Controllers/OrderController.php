@@ -295,5 +295,29 @@ class OrderController extends Controller
             'csrf_field'  => $this->csrfField(),
         ]);
     }
+
+    public function printReceipt(string $id): void
+    {
+        $this->requirePermission('orders.view_invoice');
+        $order = $this->orderModel->find((int)$id);
+        $items = $this->orderModel->detail((int)$id);
+
+        if (!$order) {
+            $this->flash('error', 'Pesanan tidak ditemukan.');
+            $this->redirect('orders');
+            return;
+        }
+
+        $storeModel = $this->model('StoreModel');
+        $store = $storeModel->find((int)$_SESSION['store_id']);
+
+        $this->view('layouts/blank', [
+            'pageTitle' => 'Struk #' . $id,
+            'content' => 'orders/receipt',
+            'order' => $order,
+            'items' => $items,
+            'store' => $store,
+        ]);
+    }
 }
 

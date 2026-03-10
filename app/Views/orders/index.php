@@ -44,21 +44,24 @@
 <div class="section" style="padding:0;overflow:hidden">
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th>No</th><th>Pelanggan</th><th>No. HP</th><th>Items</th><th>Total</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>#</th><th>Pelanggan</th><th>No. HP</th><th>Items</th><th>Total</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr></thead>
             <tbody>
             <?php if (empty($orders)): ?>
             <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">Tidak ada pesanan yang sesuai filter.</td></tr>
             <?php else: ?>
-                <?php $no = 1; foreach ($orders as $o): ?>
+                <?php foreach ($orders as $o): ?>
                 <tr>
-                    <td><?= $no++ ?></td>
+                    <td><?= $o['id'] ?></td>
                     <td><strong><?= htmlspecialchars($o['customer_name']) ?></strong></td>
                     <td><?= $o['customer_phone'] ?? '-' ?></td>
                     <td><?= $o['total_items'] ?> item</td>
                     <td>Rp <?= number_format($o['total'], 0, ',', '.') ?></td>
                     <td><span class="badge badge-<?= $o['status'] ?>"><?= $o['status'] ?></span></td>
                     <td style="white-space:nowrap"><?= date('d/m/y H:i', strtotime($o['created_at'])) ?></td>
-                    <td><a href="<?= BASE_URL ?>/orders/<?= $o['id'] ?>" class="btn btn-sm">Detail</a></td>
+                    <td>
+                        <a href="<?= BASE_URL ?>/orders/<?= $o['id'] ?>" class="btn btn-sm">Detail</a>
+                        <a href="<?= BASE_URL ?>/orders/print-receipt/<?= $o['id'] ?>" class="btn btn-sm" target="_blank" style="background:#1a1a1a;color:white;margin-left:4px">🧾</a>
+                    </td>
                 </tr>
                 <?php endforeach; ?>
             <?php endif; ?>

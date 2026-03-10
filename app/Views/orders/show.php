@@ -1,6 +1,7 @@
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
     <h2 style="margin:0;font-size:18px;font-weight:800">Pesanan #<?= $order['id'] ?></h2>
     <a id="printButton" href="<?= BASE_URL ?>/orders/print-invoice/<?= $order['id'] ?>" class="btn btn-primary no-print" target="_blank">🖨️ Print Invoice</a>
+    <a href="<?= BASE_URL ?>/orders/print-receipt/<?= $order['id'] ?>" class="btn no-print" target="_blank" style="background:#1a1a1a;color:white">🧾 Print Struk</a>
 </div>
 
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px">
