@@ -5,7 +5,7 @@ ob_start();
 
 // ── Session Security ──────────────────────────────────────────────
 ini_set('session.cookie_httponly', '1');
-ini_set('session.cookie_samesite', 'Strict');
+ini_set('session.cookie_samesite', 'Lax');
 ini_set('session.use_strict_mode', '1');
 ini_set('session.gc_maxlifetime', '7200');
 if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
