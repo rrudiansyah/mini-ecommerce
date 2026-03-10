@@ -44,14 +44,14 @@
 <div class="section" style="padding:0;overflow:hidden">
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th>#</th><th>Pelanggan</th><th>No. HP</th><th>Items</th><th>Total</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>No</th><th>Pelanggan</th><th>No. HP</th><th>Items</th><th>Total</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr></thead>
             <tbody>
             <?php if (empty($orders)): ?>
             <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">Tidak ada pesanan yang sesuai filter.</td></tr>
             <?php else: ?>
-                <?php foreach ($orders as $o): ?>
+                <?php $no = 1; foreach ($orders as $o): ?>
                 <tr>
-                    <td><?= $o['id'] ?></td>
+                    <td><?= $no++ ?></td>
                     <td><strong><?= htmlspecialchars($o['customer_name']) ?></strong></td>
                     <td><?= $o['customer_phone'] ?? '-' ?></td>
                     <td><?= $o['total_items'] ?> item</td>

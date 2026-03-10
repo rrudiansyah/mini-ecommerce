@@ -25,11 +25,11 @@
     <h2>Pesanan Terbaru</h2>
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th>#</th><th>Pelanggan</th><th>Total</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>No</th><th>Pelanggan</th><th>Total</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr></thead>
             <tbody>
-            <?php foreach ($recentOrders as $order): ?>
+            <?php $no = 1; foreach ($recentOrders as $order): ?>
             <tr>
-                <td><?= $order['id'] ?></td>
+                <td><?= $no++ ?></td>
                 <td><?= htmlspecialchars($order['customer_name']) ?></td>
                 <td>Rp <?= number_format($order['total'], 0, ',', '.') ?></td>
                 <td><span class="badge badge-<?= $order['status'] ?>"><?= $order['status'] ?></span></td>
