@@ -35,9 +35,13 @@ class UserController extends Controller
         // Get available roles
         $roles = $this->roleModel->where('store_id', $storeId);
 
+        require_once ROOT_PATH . '/app/Helpers/PlanHelper.php';
         $this->view('layouts/main', [
-            'pageTitle' => 'Kelola Pengguna',
-            'content' => 'users/index',
+            'pageTitle'    => 'Kelola Pengguna',
+            'content'      => 'users/index',
+            'planLimit'    => PlanHelper::limit('admins'),
+            'planOverLimit'=> PlanHelper::isOverLimit('admins', count($admins)),
+            'planName'     => PlanHelper::planName(),
             'admins' => $admins,
             'roles' => $roles,
             'csrf_field'  => $this->csrfField(),
@@ -71,6 +75,17 @@ class UserController extends Controller
         $this->requireRole('Admin');
 
         $storeId = $_SESSION['store_id'];
+
+        // Cek limit admin paket
+        require_once ROOT_PATH . '/app/Helpers/PlanHelper.php';
+        $currentAdmins = $this->adminModel->query(
+            "SELECT id FROM admins WHERE store_id = ?", [$storeId]
+        );
+        if (PlanHelper::isOverLimit('admins', count($currentAdmins))) {
+            $this->flash('error', PlanHelper::upgradeMessage('admins'));
+            $this->redirect('users');
+            return;
+        }
         $name = $this->input('name');
         $email = $this->input('email');
         $password = $this->input('password');

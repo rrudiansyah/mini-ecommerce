@@ -11,6 +11,18 @@ $router->get('/products/edit/{id}',      'ProductController',   'edit');
 $router->post('/products/update/{id}',   'ProductController',   'update');
 $router->post('/products/delete/{id}',   'ProductController',   'delete');
 
+// ── Inventory / Stok Bahan ─────────────────────────────────────
+$router->get('/inventory',               'InventoryController', 'index');
+$router->get('/inventory/create',        'InventoryController', 'create');
+$router->post('/inventory/store',        'InventoryController', 'store');
+$router->get('/inventory/edit/{id}',     'InventoryController', 'edit');
+$router->post('/inventory/update/{id}',  'InventoryController', 'update');
+$router->post('/inventory/delete/{id}',  'InventoryController', 'delete');
+$router->post('/inventory/stock-in',     'InventoryController', 'stockIn');
+$router->post('/inventory/adjust/{id}',  'InventoryController', 'adjust');
+$router->get('/inventory/logs',          'InventoryController', 'logs');
+$router->get('/inventory/api/list',      'InventoryController', 'apiList');
+
 $router->get('/categories',              'CategoryController',  'index');
 $router->post('/categories/store',       'CategoryController',  'store');
 $router->post('/categories/update/{id}', 'CategoryController',  'update');
@@ -30,6 +42,7 @@ $router->post('/orders/update-status/{id}', 'OrderController',  'updateStatus');
 
 $router->get('/reports',                 'ReportController',    'index');
 $router->get('/reports/sales',           'ReportController',    'sales');
+$router->get('/reports/ingredients',     'ReportController',    'ingredients');
 
 $router->get('/settings',                       'SettingController',   'index');
 $router->get('/settings/roles',                 'SettingController',   'rolesIndex');
@@ -62,6 +75,7 @@ $router->get('/superadmin/stores/create',      'SuperAdminController', 'storeCre
 $router->post('/superadmin/stores/store',      'SuperAdminController', 'storeStore');
 $router->get('/superadmin/stores/toggle/{id}', 'SuperAdminController', 'storeToggle');
 $router->post('/superadmin/stores/delete/{id}','SuperAdminController', 'storeDelete');
+$router->post('/superadmin/stores/plan/{id}',  'SuperAdminController', 'storePlan');
 
 // ── Halaman Publik Toko (multi-tenant via slug) ───────
 $router->get('/toko/{slug}',                   'StorePageController',  'show');

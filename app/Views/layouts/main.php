@@ -83,6 +83,21 @@ $currentUrl = $_SERVER['REQUEST_URI'] ?? '';
         </a>
         <?php endif; ?>
 
+        <?php if ($menuPerms['inventory']['visible'] ?? false): ?>
+        <a href="<?= BASE_URL ?>/inventory" <?= str_contains($currentUrl, '/inventory') ? 'class="active"' : '' ?>
+           style="position:relative">
+            📦 Stok Bahan
+            <?php if (!empty($navLowStockCount)): ?>
+            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
+                         background:#ef4444;color:#fff;font-size:10px;font-weight:700;
+                         min-width:18px;height:18px;border-radius:100px;
+                         display:flex;align-items:center;justify-content:center;padding:0 4px">
+                <?= (int)$navLowStockCount ?>
+            </span>
+            <?php endif; ?>
+        </a>
+        <?php endif; ?>
+
         <?php if (AuthHelper::can('admins.manage')): ?>
         <a href="<?= BASE_URL ?>/users" <?= str_contains($currentUrl, '/users') ? 'class="active"' : '' ?>>
             👥 Pengguna
@@ -413,46 +428,78 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// ── PWA Install Prompt ────────────────────────────────────────────
+// ── PWA Install Prompt ────────────────────────────────────────────────
 let deferredPrompt = null;
 const installBanner = document.getElementById('pwaInstallBanner');
 const installBtn    = document.getElementById('pwaInstallBtn');
 const dismissBtn    = document.getElementById('pwaDismissBtn');
 
+// Simpan dismissed state di sessionStorage (tidak butuh HTTPS)
+function isDismissed() {
+    try { return sessionStorage.getItem('pwa-dismissed') === '1'; } catch(e) { return false; }
+}
+function setDismissed() {
+    try { sessionStorage.setItem('pwa-dismissed', '1'); } catch(e) {}
+}
+
+// Deteksi iOS Safari
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isSafari = /safari/i.test(navigator.userAgent) && !/chrome|crios/i.test(navigator.userAgent);
+const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+// iOS Safari — tampilkan petunjuk manual
+if (isIOS && isSafari && !isInStandaloneMode && !isDismissed()) {
+    setTimeout(() => {
+        if (installBanner) {
+            if (installBtn) {
+                installBtn.textContent = 'Cara Install';
+                installBtn.addEventListener('click', () => {
+                    alert('Cara install di iOS Safari:\n\n1. Tap tombol Share (⬆️) di bawah\n2. Scroll ke bawah\n3. Tap "Add to Home Screen"\n4. Tap "Add"');
+                    if (installBanner) installBanner.style.display = 'none';
+                    setDismissed();
+                }, { once: true });
+            }
+            installBanner.style.display = 'flex';
+        }
+    }, 3000);
+}
+
+// Android/Chrome — gunakan beforeinstallprompt
 window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredPrompt = e;
-
-    // Tampilkan banner hanya jika belum pernah dismiss
-    if (!localStorage.getItem('pwa-dismissed')) {
+    if (!isDismissed() && !isInStandaloneMode) {
         setTimeout(() => {
             if (installBanner) installBanner.style.display = 'flex';
         }, 3000);
     }
 });
 
-if (installBtn) {
+if (installBtn && !isIOS) {
     installBtn.addEventListener('click', async () => {
         if (!deferredPrompt) return;
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
         deferredPrompt = null;
         if (installBanner) installBanner.style.display = 'none';
-        console.log('[PWA] Install outcome:', outcome);
+        setDismissed();
     });
 }
 
+// Tombol X — fix dismiss
 if (dismissBtn) {
-    dismissBtn.addEventListener('click', () => {
+    dismissBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         if (installBanner) installBanner.style.display = 'none';
-        localStorage.setItem('pwa-dismissed', '1');
+        setDismissed();
     });
 }
 
 // Sembunyikan banner jika sudah terinstall
 window.addEventListener('appinstalled', () => {
     if (installBanner) installBanner.style.display = 'none';
-    console.log('[PWA] App installed!');
+    setDismissed();
 });
 
 // ── Push Notification Setup ───────────────────────────────────────

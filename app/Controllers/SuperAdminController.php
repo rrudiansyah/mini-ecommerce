@@ -240,6 +240,41 @@ class SuperAdminController extends Controller
         $this->redirect('superadmin/stores');
     }
 
+    // ── Upgrade/Downgrade Plan Toko ──────────────────────
+    public function storePlan(string $id): void
+    {
+        if (!$this->isPost()) $this->redirect('superadmin/stores');
+        $this->validateCsrf();
+
+        $store = $this->storeModel->find((int)$id);
+        if (!$store) {
+            $this->flash('error', 'Toko tidak ditemukan.');
+            $this->redirect('superadmin/stores');
+            return;
+        }
+
+        $plan    = $this->input('plan');
+        $expires = $this->input('plan_expires_at') ?: null;
+        $allowed = ['basic', 'pro', 'bisnis'];
+
+        if (!in_array($plan, $allowed)) {
+            $this->flash('error', 'Paket tidak valid.');
+            $this->redirect('superadmin/stores');
+            return;
+        }
+
+        $this->storeModel->update((int)$id, [
+            'plan'            => $plan,
+            'plan_expires_at' => $expires,
+        ]);
+
+        $labels = ['basic' => 'Basic', 'pro' => 'Pro', 'bisnis' => 'Bisnis'];
+        $storeName = $store['name'];
+        $planLabel = $labels[$plan];
+        $this->flash('success', "Paket toko '{$storeName}' diubah ke {$planLabel}.");
+        $this->redirect('superadmin/stores');
+    }
+
     // ── Logout ───────────────────────────────────────────
     public function logout(): void
     {

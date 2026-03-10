@@ -72,6 +72,10 @@ class AuthController extends Controller
                 }
             }
 
+            // Load plan toko ke session
+            require_once ROOT_PATH . '/app/Helpers/PlanHelper.php';
+            PlanHelper::loadToSession($admin['store_id']);
+
             $this->redirect('dashboard');
         }
 

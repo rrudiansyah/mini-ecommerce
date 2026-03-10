@@ -1,5 +1,38 @@
-<div class="page-header">
+<?php
+require_once ROOT_PATH . '/app/Helpers/PlanHelper.php';
+$productCount = count($products);
+$limit        = $planLimit ?? PlanHelper::limit('products');
+$overLimit    = $planOverLimit ?? PlanHelper::isOverLimit('products', $productCount);
+$limitLabel   = $limit === -1 ? '∞' : $limit;
+?>
+
+<?php if ($overLimit): ?>
+<div style="background:#fff8f0;border:1.5px solid #fed7aa;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+  <span style="font-size:22px">🔒</span>
+  <div style="flex:1">
+    <strong style="color:#92400e">Batas produk paket <?= htmlspecialchars($planName ?? PlanHelper::planName()) ?> tercapai (<?= $productCount ?>/<?= $limitLabel ?>)</strong>
+    <div style="font-size:13px;color:#b45309;margin-top:2px">Hubungi Super Admin untuk upgrade ke paket Pro (maks 100 produk) atau Bisnis (unlimited).</div>
+  </div>
+</div>
+<?php endif; ?>
+
+<div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+  <div style="display:flex;align-items:center;gap:10px">
+    <span style="font-size:13px;color:#888">
+      <?= $productCount ?> / <?= $limitLabel ?> produk
+      <?php if ($limit !== -1): ?>
+      <span style="display:inline-block;background:#e5e7eb;border-radius:100px;height:6px;width:80px;vertical-align:middle;margin-left:6px">
+        <span style="display:block;background:<?= $overLimit ? '#ef4444' : ($productCount/$limit > 0.8 ? '#f59e0b' : '#22c55e') ?>;border-radius:100px;height:6px;width:<?= min(100, round($productCount/$limit*100)) ?>%"></span>
+      </span>
+      <?php endif; ?>
+    </span>
+    <?= PlanHelper::badge() ?>
+  </div>
+  <?php if ($overLimit): ?>
+    <button class="btn btn-primary" disabled title="<?= htmlspecialchars(PlanHelper::upgradeMessage('products')) ?>" style="opacity:.5;cursor:not-allowed">🔒 Tambah Produk</button>
+  <?php else: ?>
     <a href="<?= BASE_URL ?>/products/create" class="btn btn-primary">+ Tambah Produk</a>
+  <?php endif; ?>
 </div>
 <div class="table-wrap">
     <table class="table">
