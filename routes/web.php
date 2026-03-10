@@ -23,6 +23,8 @@ $router->get('/orders/export/{format}',  'OrderController',     'export');
 $router->post('/orders/record-payment/{id}', 'OrderController',  'recordPayment');
 $router->get('/orders/print-invoice/{id}', 'OrderController',   'printInvoice');
 $router->get('/orders/print-receipt/{id}', 'OrderController',   'printReceipt');
+$router->get('/orders/count-pending',      'OrderController',   'countPending');
+$router->get('/offline',                   'OrderController',   'offlinePage');
 $router->get('/orders/{id}',             'OrderController',     'show');
 $router->post('/orders/update-status/{id}', 'OrderController',  'updateStatus');
 

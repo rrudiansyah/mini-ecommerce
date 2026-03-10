@@ -319,5 +319,24 @@ class OrderController extends Controller
             'store' => $store,
         ]);
     }
+
+    public function countPending(): void
+    {
+        if (empty($_SESSION['admin_id'])) {
+            $this->json(['count' => 0]);
+            return;
+        }
+        $storeId = (int)($_SESSION['store_id'] ?? 0);
+        $count = $this->orderModel->countPending($storeId);
+        $this->json(['count' => $count]);
+    }
+
+    public function offlinePage(): void
+    {
+        $file = ROOT_PATH . '/public/offline.php';
+        if (file_exists($file)) require $file;
+        else echo '<h1>Offline</h1><p>Tidak ada koneksi internet.</p>';
+        exit;
+    }
 }
 

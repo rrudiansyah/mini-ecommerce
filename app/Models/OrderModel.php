@@ -91,4 +91,13 @@ class OrderModel extends Model
 
         return $this->query($sql, $params);
     }
+
+    public function countPending(int $storeId): int
+    {
+        $row = $this->queryOne(
+            "SELECT COUNT(*) as total FROM orders WHERE store_id = ? AND status = 'pending'",
+            [$storeId]
+        );
+        return (int)($row['total'] ?? 0);
+    }
 }
