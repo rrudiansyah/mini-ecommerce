@@ -42,7 +42,9 @@ $router->post('/orders/update-status/{id}', 'OrderController',  'updateStatus');
 
 $router->get('/reports',                 'ReportController',    'index');
 $router->get('/reports/sales',           'ReportController',    'sales');
-$router->get('/reports/ingredients',     'ReportController',    'ingredients');
+$router->get('/reports/ingredients',          'ReportController', 'ingredients');
+$router->get('/reports/sales/export',         'ReportController', 'exportSales');
+$router->get('/reports/ingredients/export',   'ReportController', 'exportIngredients');
 
 $router->get('/settings',                       'SettingController',   'index');
 $router->get('/settings/roles',                 'SettingController',   'rolesIndex');

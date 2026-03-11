@@ -43,7 +43,7 @@ class InventoryController extends Controller
     // ── GET /inventory/create ───────────────────────────
     public function create(): void
     {
-        $this->requirePermission('inventory.manage');
+        $this->requirePermission('inventory.create');
         $this->view('layouts/main', [
             'pageTitle'  => 'Tambah Bahan Baku',
             'content'    => 'inventory/form',
@@ -56,7 +56,7 @@ class InventoryController extends Controller
     public function store(): void
     {
         $this->validateCsrf();
-        $this->requirePermission('inventory.manage');
+        $this->requirePermission('inventory.create');
 
         $data = [
             'store_id'      => $_SESSION['store_id'],
@@ -81,7 +81,7 @@ class InventoryController extends Controller
     // ── GET /inventory/edit/{id} ────────────────────────
     public function edit(string $id): void
     {
-        $this->requirePermission('inventory.manage');
+        $this->requirePermission('inventory.create');
         $ingredient = $this->ingredientModel->find((int)$id);
         if (!$ingredient || $ingredient['store_id'] != $_SESSION['store_id']) {
             $this->flash('error', 'Bahan tidak ditemukan.');
@@ -99,7 +99,7 @@ class InventoryController extends Controller
     public function update(string $id): void
     {
         $this->validateCsrf();
-        $this->requirePermission('inventory.manage');
+        $this->requirePermission('inventory.create');
 
         $ingredient = $this->ingredientModel->find((int)$id);
         if (!$ingredient || $ingredient['store_id'] != $_SESSION['store_id']) {
@@ -123,7 +123,7 @@ class InventoryController extends Controller
     public function delete(string $id): void
     {
         $this->validateCsrf();
-        $this->requirePermission('inventory.manage');
+        $this->requirePermission('inventory.create');
 
         $ingredient = $this->ingredientModel->find((int)$id);
         if (!$ingredient || $ingredient['store_id'] != $_SESSION['store_id']) {
@@ -139,7 +139,7 @@ class InventoryController extends Controller
     public function stockIn(): void
     {
         $this->validateCsrf();
-        $this->requirePermission('inventory.stock_in');
+        $this->requirePermission('inventory.create');
 
         $id      = (int)$this->input('ingredient_id');
         $qty     = (float)$this->input('qty');
@@ -162,7 +162,7 @@ class InventoryController extends Controller
     public function adjust(string $id): void
     {
         $this->validateCsrf();
-        $this->requirePermission('inventory.manage');
+        $this->requirePermission('inventory.create');
 
         $storeId   = $_SESSION['store_id'];
         $adminId   = $_SESSION['admin_id'] ?? 0;
@@ -183,7 +183,7 @@ class InventoryController extends Controller
     // ── GET /inventory/logs ─────────────────────────────
     public function logs(): void
     {
-        $this->requirePermission('inventory.logs');
+        $this->requirePermission('inventory.read');
         $storeId = $_SESSION['store_id'];
         $ingId   = (int)($_GET['ingredient_id'] ?? 0);
         $type    = $_GET['type'] ?? '';

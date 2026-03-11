@@ -97,9 +97,9 @@ class AuthHelper
             'reports' => self::can('reports.view'),
             'inventory' => [
                 'visible' => self::can('inventory.read'),
-                'manage'  => self::can('inventory.manage'),
-                'stock_in'=> self::can('inventory.stock_in'),
-                'logs'    => self::can('inventory.logs'),
+                'manage'  => self::can('inventory.create') || self::can('inventory.update'),
+                'stock_in'=> self::can('inventory.create'),
+                'logs'    => self::can('inventory.read'),
             ],
             'users' => self::can('admins.manage'),
             'settings' => self::isSuperAdmin(), // hanya Super Admin
