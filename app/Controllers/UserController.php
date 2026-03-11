@@ -114,14 +114,26 @@ class UserController extends Controller
             return;
         }
 
+        // Generate username dari email (bagian sebelum @)
+        $username = $this->input('username') ?: explode('@', $email)[0];
+        // Pastikan username unik dengan tambah angka jika perlu
+        $baseUsername = preg_replace('/[^a-zA-Z0-9_]/', '', $username);
+        $finalUsername = $baseUsername;
+        $counter = 1;
+        while ($this->adminModel->findByUsername($finalUsername)) {
+            $finalUsername = $baseUsername . $counter;
+            $counter++;
+        }
+
         try {
             // Create admin
             $adminId = $this->adminModel->create([
                 'store_id' => $storeId,
-                'name' => $name,
-                'email' => $email,
+                'name'     => $name,
+                'username' => $finalUsername,
+                'email'    => $email,
                 'password' => password_hash($password, PASSWORD_BCRYPT),
-                'is_active' => 1,
+                'is_active'=> 1,
             ]);
 
             // Assign role

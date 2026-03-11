@@ -11,6 +11,14 @@
                 <label for="email">Email *</label>
                 <input type="email" id="email" name="email" value="<?= htmlspecialchars($user['email'] ?? '') ?>" required>
             </div>
+            <div class="form-group">
+                <label for="username">Username * <small style="color:#888">(untuk login)</small></label>
+                <input type="text" id="username" name="username"
+                       value="<?= htmlspecialchars($user['username'] ?? '') ?>"
+                       pattern="[a-zA-Z0-9_]+" title="Hanya huruf, angka, dan underscore"
+                       <?= $user ? '' : 'required' ?>>
+                <small style="color:#888">Otomatis terisi dari email jika dikosongkan</small>
+            </div>
         </div>
 
         <div class="form-row">
