@@ -42,9 +42,10 @@
         }
         rewrite @landingPage /index.html
 
-        # Rewrite URL ke index.php (MVC router)
+        # Rewrite semua URL non-static ke index.php
+        # Router membaca dari REQUEST_URI, bukan $_GET['url']
         @notStatic not file
-        rewrite @notStatic /index.php?url={path}&{query}
+        rewrite @notStatic /index.php
 
         # Jalankan PHP
         php_server

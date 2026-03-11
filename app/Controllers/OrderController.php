@@ -165,9 +165,39 @@ class OrderController extends Controller
         $status  = $this->input('status');
         $allowed = ['pending', 'proses', 'selesai', 'batal'];
         if (!in_array($status, $allowed)) $this->json(['error' => 'Status tidak valid.'], 400);
+
+        // Ambil status lama sebelum diupdate
+        $order = $this->orderModel->find((int)$id);
+        $wasSelesai = ($order && $order['status'] === 'selesai');
+
         $this->orderModel->updateStatus((int)$id, $status);
+
+        // Kurangi stok otomatis saat pertama kali jadi 'selesai'
+        if ($status === 'selesai' && !$wasSelesai) {
+            $this->_deductStockForOrder((int)$id);
+        }
+
         $this->flash('success', 'Status pesanan diperbarui.');
         $this->redirect('orders/' . $id);
+    }
+
+    // ── Helper: kurangi stok bahan baku sesuai resep ────────
+    private function _deductStockForOrder(int $orderId): void
+    {
+        $storeId   = $_SESSION['store_id'];
+        $adminId   = $_SESSION['admin_id'] ?? 0;
+        $items     = $this->orderModel->detail($orderId);
+        $recipeModel = $this->model('RecipeModel');
+
+        foreach ($items as $item) {
+            $recipeModel->deductForOrder(
+                (int)$item['product_id'],
+                (int)$item['qty'],
+                $storeId,
+                $orderId,
+                $adminId
+            );
+        }
     }
 
     public function export(string $format): void

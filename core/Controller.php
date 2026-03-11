@@ -12,6 +12,22 @@ abstract class Controller
 
     protected function view(string $view, array $data = []): void
     {
+        // Auto-inject navLowStockCount untuk badge stok menipis di sidebar
+        // Hanya hitung jika user sudah login, punya permission inventory, dan belum di-set
+        if (!isset($data['navLowStockCount']) && !empty($_SESSION['store_id'])) {
+            $perms = $_SESSION['permissions'] ?? [];
+            if (in_array('inventory.read', $perms)) {
+                $ingFile = ROOT_PATH . '/app/Models/IngredientModel.php';
+                if (file_exists($ingFile)) {
+                    require_once $ingFile;
+                    $data['navLowStockCount'] = count((new IngredientModel())->lowStock((int)$_SESSION['store_id']));
+                }
+            }
+        }
+        if (!isset($data['navLowStockCount'])) {
+            $data['navLowStockCount'] = 0;
+        }
+
         extract($data);
         $file = ROOT_PATH . "/app/Views/{$view}.php";
         if (!file_exists($file)) die("View [{$view}] tidak ditemukan.");
@@ -134,8 +150,7 @@ abstract class Controller
             exit;
         }
 
-        // Rotate token setelah validasi (one-time use)
-        unset($_SESSION['csrf_token']);
+       
     }
 
     /**

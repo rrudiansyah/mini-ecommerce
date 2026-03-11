@@ -101,4 +101,87 @@ class ReportController extends Controller
             'csrf_field'  => $this->csrfField(),
         ]);
     }
+
+    // ── GET /reports/ingredients — Laporan Penggunaan Bahan ──
+    public function ingredients(): void
+    {
+        $this->requirePermission('inventory.logs');
+        $storeId = $_SESSION['store_id'];
+        $db      = Database::getInstance();
+
+        $month     = $_GET['month'] ?? date('Y-m');
+        $startDate = $month . '-01';
+        $endDate   = date('Y-m-t', strtotime($startDate));
+
+        // Total penggunaan bahan per bahan dalam periode
+        $stmt = $db->prepare("
+            SELECT
+                i.id,
+                i.name,
+                i.unit,
+                i.stock,
+                i.stock_min,
+                i.cost_per_unit,
+                COALESCE(SUM(CASE WHEN sl.type='out' THEN sl.qty ELSE 0 END), 0) AS total_used,
+                COALESCE(SUM(CASE WHEN sl.type='in'  THEN sl.qty ELSE 0 END), 0) AS total_in,
+                COALESCE(SUM(CASE WHEN sl.type='out' THEN sl.qty * i.cost_per_unit ELSE 0 END), 0) AS total_cost
+            FROM ingredients i
+            LEFT JOIN stock_logs sl
+                ON sl.ingredient_id = i.id
+                AND DATE(sl.created_at) BETWEEN ? AND ?
+            WHERE i.store_id = ?
+            GROUP BY i.id
+            ORDER BY total_used DESC
+        ");
+        $stmt->execute([$startDate, $endDate, $storeId]);
+        $usageData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Total HPP dari pesanan yang selesai bulan ini
+        $stmt2 = $db->prepare("
+            SELECT
+                COALESCE(SUM(p.hpp * oi.qty), 0) AS total_hpp,
+                COALESCE(SUM(oi.qty * oi.price), 0) AS total_revenue,
+                COUNT(DISTINCT o.id) AS total_orders
+            FROM orders o
+            JOIN order_items oi ON oi.order_id = o.id
+            JOIN products p ON p.id = oi.product_id
+            WHERE o.store_id = ? AND o.status = 'selesai'
+              AND DATE(o.created_at) BETWEEN ? AND ?
+        ");
+        $stmt2->execute([$storeId, $startDate, $endDate]);
+        $hppSummary = $stmt2->fetch(PDO::FETCH_ASSOC);
+
+        // Top produk dengan HPP tertinggi
+        $stmt3 = $db->prepare("
+            SELECT
+                p.name,
+                p.hpp,
+                p.hpp_type,
+                p.price,
+                COALESCE(SUM(oi.qty), 0) AS total_sold,
+                COALESCE(SUM(p.hpp * oi.qty), 0) AS total_hpp_cost,
+                COALESCE(SUM(oi.qty * oi.price), 0) AS total_revenue
+            FROM products p
+            LEFT JOIN order_items oi ON oi.product_id = p.id
+            LEFT JOIN orders o ON o.id = oi.order_id
+                AND o.status = 'selesai'
+                AND DATE(o.created_at) BETWEEN ? AND ?
+            WHERE p.store_id = ?
+            GROUP BY p.id
+            ORDER BY total_hpp_cost DESC
+            LIMIT 15
+        ");
+        $stmt3->execute([$startDate, $endDate, $storeId]);
+        $productHpp = $stmt3->fetchAll(PDO::FETCH_ASSOC);
+
+        $this->view('layouts/main', [
+            'pageTitle'  => 'Laporan Penggunaan Bahan & HPP',
+            'content'    => 'reports/ingredients',
+            'month'      => $month,
+            'usageData'  => $usageData,
+            'hppSummary' => $hppSummary,
+            'productHpp' => $productHpp,
+            'csrf_field' => $this->csrfField(),
+        ]);
+    }
 }

@@ -6,9 +6,13 @@ ob_start();
 // ── Session Security ──────────────────────────────────────────────
 ini_set('session.cookie_httponly', '1');
 ini_set('session.cookie_samesite', 'Lax');
-ini_set('session.use_strict_mode', '1');
+ini_set('session.use_strict_mode', '0');   // off agar session tidak drop saat redirect
 ini_set('session.gc_maxlifetime', '7200');
-if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+// cookie_secure: aktif hanya jika benar-benar HTTPS dari browser (bukan proxy internal)
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
+        || ($_SERVER['SERVER_PORT'] ?? 80) == 443;
+if ($isHttps) {
     ini_set('session.cookie_secure', '1');
 }
 session_start();

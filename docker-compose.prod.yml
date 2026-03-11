@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile
       # Build production: tidak ada volume mount
     environment:
-      - SERVER_NAME=tokosebelah.web.id  # Ganti dengan domain asli
+      - SERVER_NAME=tokosebelah.web.id
       - TZ=Asia/Jakarta
     # Tidak ada volume mount kode di production
     volumes:

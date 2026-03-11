@@ -115,6 +115,9 @@
     </tbody>
 </table>
 
-<div style="margin-top:20px">
-    <a href="<?= BASE_URL ?>/reports/sales" class="btn btn-primary">Lihat Laporan Penjualan Detail →</a>
+<div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+    <a href="<?= BASE_URL ?>/reports/sales" class="btn btn-primary">📈 Laporan Penjualan Detail →</a>
+    <a href="<?= BASE_URL ?>/reports/ingredients" class="btn" style="background:#fff8f0;border:1.5px solid #fed7aa;color:#92400e;font-weight:700">
+        📊 Laporan Bahan & HPP →
+    </a>
 </div>
