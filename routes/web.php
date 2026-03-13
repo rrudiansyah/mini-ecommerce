@@ -11,7 +11,22 @@ $router->get('/products/edit/{id}',      'ProductController',   'edit');
 $router->post('/products/update/{id}',   'ProductController',   'update');
 $router->post('/products/delete/{id}',   'ProductController',   'delete');
 
+// ── Varian Produk ─────────────────────────────────────────────────
+$router->get('/variants',                  'VariantController', 'index');
+$router->post('/variants/type/store',      'VariantController', 'typeStore');
+$router->post('/variants/type/update/{id}','VariantController', 'typeUpdate');
+$router->post('/variants/type/delete/{id}','VariantController', 'typeDelete');
+$router->get('/variants/api/types',        'VariantController', 'apiTypes');
+$router->post('/variants/stock/update',       'VariantController', 'stockUpdate');
+
+
 // ── Inventory / Stok Bahan ─────────────────────────────────────
+// ── Stok Produk ─────────────────────────────────────────
+$router->get('/product-stock',              'ProductStockController', 'index');
+$router->post('/product-stock/stock-in',    'ProductStockController', 'stockIn');
+$router->post('/product-stock/adjust/{id}', 'ProductStockController', 'adjust');
+$router->get('/product-stock/logs',         'ProductStockController', 'logs');
+
 $router->get('/inventory',               'InventoryController', 'index');
 $router->get('/inventory/create',        'InventoryController', 'create');
 $router->post('/inventory/store',        'InventoryController', 'store');
@@ -45,6 +60,7 @@ $router->get('/reports/sales',           'ReportController',    'sales');
 $router->get('/reports/ingredients',          'ReportController', 'ingredients');
 $router->get('/reports/sales/export',         'ReportController', 'exportSales');
 $router->get('/reports/ingredients/export',   'ReportController', 'exportIngredients');
+$router->get('/reports/variants',              'ReportController', 'variants');
 
 $router->get('/settings',                       'SettingController',   'index');
 $router->get('/settings/roles',                 'SettingController',   'rolesIndex');
