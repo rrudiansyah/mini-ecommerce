@@ -40,6 +40,18 @@ class StorePageController extends Controller
         }
         $menu = array_filter($menu, fn($c) => !empty($c['products']));
 
+        // Attach variants ke setiap produk
+        require_once ROOT_PATH . '/app/Models/VariantModel.php';
+        $variantModel = new VariantModel();
+        foreach ($menu as &$cat) {
+            foreach ($cat['products'] as &$p) {
+                $p['variants'] = !empty($p['has_variants'])
+                    ? $variantModel->byProduct((int)$p['id'])
+                    : [];
+            }
+        }
+        unset($cat, $p);
+
         // Pilih template berdasarkan niche
         $themeMap = [
             'coffee'     => 'themes/coffee/layout',
@@ -90,20 +102,47 @@ class StorePageController extends Controller
         $validItems   = [];
         $total        = 0;
 
+        require_once ROOT_PATH . '/app/Models/VariantModel.php';
+        $variantModel = new VariantModel();
+
         foreach ($items as $item) {
             $product = $productModel->find((int)($item['product_id'] ?? 0));
             if (!$product || !$product['is_available'] || $product['store_id'] != $store['id']) continue;
 
-            $qty      = max(1, (int)($item['qty'] ?? 1));
-            $subtotal = $product['price'] * $qty;
+            // Cek stok produk (stock >= 0 = ditrack, -1 = tidak ditrack)
+            if ((int)($product['stock'] ?? -1) === 0) {
+                echo json_encode(['success' => false, 'message' => $product['name'] . ' sudah habis.']);
+                exit;
+            }
+
+            $qty        = max(1, (int)($item['qty'] ?? 1));
+            $variantId  = !empty($item['variant_id']) ? (int)$item['variant_id'] : null;
+            $variantLbl = trim($item['variant_label'] ?? '');
+
+            // Tentukan harga: pakai harga varian jika ada dan > 0, fallback ke harga produk
+            $price = (float)$product['price'];
+            if ($variantId) {
+                $variant = $variantModel->find($variantId);
+                if ($variant && (float)$variant['price'] > 0) {
+                    $price = (float)$variant['price'];
+                }
+            }
+
+            $subtotal = $price * $qty;
             $total   += $subtotal;
 
+            $itemName = $variantLbl
+                ? $product['name'] . ' (' . $variantLbl . ')'
+                : $product['name'];
+
             $validItems[] = [
-                'product_id' => $product['id'],
-                'qty'        => $qty,
-                'price'      => $product['price'],
-                'subtotal'   => $subtotal,
-                'name'       => $product['name'],
+                'product_id'    => $product['id'],
+                'variant_id'    => $variantId,
+                'qty'           => $qty,
+                'price'         => $price,
+                'subtotal'      => $subtotal,
+                'name'          => $itemName,
+                'variant_label' => $variantLbl,
             ];
         }
 
@@ -125,6 +164,10 @@ class StorePageController extends Controller
         );
         foreach ($validItems as $item) {
             $stmtItem->execute([$orderId, $item['product_id'], $item['qty'], $item['price']]);
+            // Kurangi stok varian
+            if (!empty($item['variant_id'])) {
+                $variantModel->deductStock((int)$item['variant_id'], (int)$item['qty']);
+            }
         }
 
         // Build WhatsApp URL
@@ -133,7 +176,8 @@ class StorePageController extends Controller
 
         $lines   = ["☕ *Pesanan Baru — {$store['name']}*", "━━━━━━━━━━━━━━━━", "🧾 No. Order : *#{$orderId}*", "👤 Nama : *{$name}*", "", "*Detail Pesanan:*"];
         foreach ($validItems as $item) {
-            $lines[] = "• {$item['name']} x{$item['qty']} = Rp " . number_format($item['subtotal'], 0, ',', '.');
+            $varInfo = !empty($item['variant_label']) ? ' [' . $item['variant_label'] . ']' : '';
+            $lines[] = "• {$item['name']}{$varInfo} x{$item['qty']} = Rp " . number_format($item['subtotal'], 0, ',', '.');
         }
         $lines[] = "━━━━━━━━━━━━━━━━";
         $lines[] = "💰 *Total : Rp " . number_format($total, 0, ',', '.') . "*";

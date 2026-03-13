@@ -73,7 +73,13 @@ class InventoryController extends Controller
             $this->redirect('inventory/create');
         }
 
-        $this->ingredientModel->create($data);
+        $id = $this->ingredientModel->create($data);
+        // Catat log stok awal
+        if ($data['stock'] > 0) {
+            $db = Database::getInstance();
+            $db->prepare("INSERT INTO stock_logs (store_id, ingredient_id, type, qty, stock_before, stock_after, notes, created_by) VALUES (?,?,?,?,?,?,?,?)")
+            ->execute([$_SESSION['store_id'], $id, 'in', $data['stock'], 0, $data['stock'], 'Stok awal saat penambahan bahan', $_SESSION['admin_id'] ?? null]);
+        }
         $this->flash('success', 'Bahan baku "' . $data['name'] . '" berhasil ditambahkan.');
         $this->redirect('inventory');
     }

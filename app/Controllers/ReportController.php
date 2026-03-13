@@ -346,4 +346,20 @@ TOTAL	" . $grandOrders . "		"
             'storeName'  => $storeName,
         ]);
     }
+    // ── Laporan Stok Varian ───────────────────────────────
+    public function variants(): void
+    {
+        $this->requirePermission('variants.read');
+        require_once ROOT_PATH . '/app/Models/VariantModel.php';
+        $variantModel = new VariantModel();
+        $storeId      = $_SESSION['store_id'];
+        $variantStock = $variantModel->stockReportByStore($storeId);
+
+        $this->view('layouts/main', [
+            'pageTitle'    => 'Laporan Stok Varian',
+            'content'      => 'reports/variants',
+            'variantStock' => $variantStock,
+            'csrf_field'   => $this->csrfField(),
+        ]);
+    }
 }

@@ -8,7 +8,7 @@ class SettingController extends Controller
 
     public function __construct()
     {
-        $this->requireSuperAdmin();
+        $this->requireAuth();
         $this->roleModel       = $this->model('RoleModel');
         $this->permissionModel = $this->model('PermissionModel');
         $this->adminModel      = $this->model('AdminModel');
@@ -20,6 +20,7 @@ class SettingController extends Controller
      */
     public function index(): void
     {
+        $this->requirePermission('settings.view');
         $this->view('layouts/main', [
             'csrf_field' => $this->csrfField(),
             'pageTitle' => 'Pengaturan',
@@ -32,6 +33,7 @@ class SettingController extends Controller
      */
     public function rolesIndex(): void
     {
+        $this->requirePermission('settings.view');
         $roles = $this->roleModel->getByStoreWithPermissions($_SESSION['store_id']);
 
         // Get admin count for each role
@@ -56,6 +58,7 @@ class SettingController extends Controller
      */
     public function roleCreate(): void
     {
+        $this->requirePermission('settings.update');
         $this->view('layouts/main', [
             'csrf_field' => $this->csrfField(),
             'pageTitle' => 'Buat Role Baru',
@@ -70,6 +73,7 @@ class SettingController extends Controller
      */
     public function roleStore(): void
     {
+        $this->requirePermission('settings.update');
         if (!$this->isPost()) {
             $this->redirect('settings/roles');
             return;
@@ -114,6 +118,7 @@ class SettingController extends Controller
      */
     public function roleEdit(string $id): void
     {
+        $this->requirePermission('settings.update');
         $role = $this->roleModel->find((int)$id);
 
         if (!$role || $role['store_id'] != $_SESSION['store_id']) {
@@ -136,6 +141,7 @@ class SettingController extends Controller
      */
     public function roleUpdate(string $id): void
     {
+        $this->requirePermission('settings.update');
         if (!$this->isPost()) {
             $this->redirect('settings/roles');
             return;
@@ -193,6 +199,7 @@ class SettingController extends Controller
      */
     public function roleDelete(string $id): void
     {
+        $this->requirePermission('settings.update');
         if (!$this->isPost()) {
             $this->redirect('settings/roles');
             return;
@@ -238,6 +245,7 @@ class SettingController extends Controller
      */
     public function rolePermissions(string $id): void
     {
+        $this->requirePermission('settings.view');
         $role = $this->roleModel->find((int)$id);
 
         if (!$role || $role['store_id'] != $_SESSION['store_id']) {
