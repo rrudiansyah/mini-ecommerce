@@ -83,6 +83,17 @@ $currentUrl = $_SERVER['REQUEST_URI'] ?? '';
         </a>
         <?php endif; ?>
 
+        <?php if ($menuPerms['variants'] ?? false): ?>
+        <a href="<?= BASE_URL ?>/variants" <?= str_contains($currentUrl, '/variants') ? 'class="active"' : '' ?>>
+            🎨 Varian Produk
+        </a>
+        <?php endif; ?>
+        <?php if ($menuPerms['product_stock']['visible'] ?? false): ?>
+        <a href="<?= BASE_URL ?>/product-stock" <?= str_contains($currentUrl, '/product-stock') ? 'class="active"' : '' ?>>
+            📦 Stok Produk
+        </a>
+        <?php endif; ?>
+
         <?php if ($menuPerms['inventory']['visible'] ?? false): ?>
         <a href="<?= BASE_URL ?>/inventory" <?= str_contains($currentUrl, '/inventory') ? 'class="active"' : '' ?>
            style="position:relative">

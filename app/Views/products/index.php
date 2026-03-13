@@ -37,7 +37,7 @@ $limitLabel   = $limit === -1 ? '∞' : $limit;
 <div class="table-wrap">
     <table class="table">
         <thead>
-            <tr><th>Gambar</th><th>Nama</th><th>Kategori</th><th>Harga</th><th>Status</th><th>Aksi</th></tr>
+            <tr><th>Gambar</th><th>Nama</th><th>Kategori</th><th>Harga</th><th>Stok</th><th>Status</th><th>Aksi</th></tr>
         </thead>
         <tbody>
         <?php foreach ($products as $p): ?>
@@ -46,6 +46,54 @@ $limitLabel   = $limit === -1 ? '∞' : $limit;
             <td><strong><?= htmlspecialchars($p['name']) ?></strong></td>
             <td><?= htmlspecialchars($p['category_name'] ?? '-') ?></td>
             <td>Rp <?= number_format($p['price'], 0, ',', '.') ?></td>
+            <td>
+                <?php if (!empty($p['has_variants'])): ?>
+                    <?php
+                    $totalStok = 0;
+                    $lowCount  = 0;
+                    foreach ($p['variants'] ?? [] as $v) {
+                        $totalStok += (int)$v['stock'];
+                        if ((int)$v['stock'] <= 5) $lowCount++;
+                    }
+                    ?>
+                    <span style="font-weight:700;<?= $totalStok == 0 ? 'color:#dc2626' : ($lowCount > 0 ? 'color:#d97706' : 'color:#16a34a') ?>">
+                        <?= $totalStok ?> pcs
+                    </span>
+                    <?php if ($lowCount > 0): ?>
+                    <br><small style="color:#d97706;font-size:11px">⚠️ <?= $lowCount ?> varian menipis</small>
+                    <?php endif; ?>
+                    <br>
+                    <button onclick="toggleVariantStock(<?= $p['id'] ?>)"
+                            style="font-size:11px;color:#6b7280;background:none;border:none;cursor:pointer;padding:2px 0;text-decoration:underline">
+                        lihat detail
+                    </button>
+                    <div id="vstk-<?= $p['id'] ?>" style="display:none;margin-top:6px">
+                        <?php foreach ($p['variants'] ?? [] as $v): ?>
+                        <div style="display:flex;justify-content:space-between;align-items:center;
+                                    padding:4px 8px;border-radius:6px;margin-bottom:3px;
+                                    background:<?= (int)$v['stock'] == 0 ? '#fef2f2' : ((int)$v['stock'] <= 5 ? '#fffbeb' : '#f0fdf4') ?>">
+                            <span style="font-size:12px"><?= htmlspecialchars($v['label']) ?></span>
+                            <span style="font-weight:700;font-size:12px;color:<?= (int)$v['stock'] == 0 ? '#dc2626' : ((int)$v['stock'] <= 5 ? '#d97706' : '#16a34a') ?>">
+                                <?= $v['stock'] ?>
+                            </span>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php elseif ((int)($p['stock'] ?? -1) >= 0): ?>
+                    <?php $stk = (int)$p['stock']; ?>
+                    <span style="font-weight:700;font-size:15px;
+                        color:<?= $stk == 0 ? '#dc2626' : ($stk <= 5 ? '#d97706' : '#16a34a') ?>">
+                        <?= $stk ?> pcs
+                    </span>
+                    <?php if ($stk == 0): ?>
+                    <br><small style="color:#dc2626;font-size:11px">⛔ Habis</small>
+                    <?php elseif ($stk <= 5): ?>
+                    <br><small style="color:#d97706;font-size:11px">⚠️ Menipis</small>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <span style="color:#9ca3af;font-size:13px">— tidak ditrack</span>
+                <?php endif; ?>
+            </td>
             <td><span class="badge badge-<?= $p['is_available'] ? 'selesai' : 'batal' ?>"><?= $p['is_available'] ? 'Tersedia' : 'Habis' ?></span></td>
             <td style="white-space:nowrap">
                 <a href="<?= BASE_URL ?>/products/edit/<?= $p['id'] ?>" class="btn btn-sm">Edit</a>
@@ -59,3 +107,17 @@ $limitLabel   = $limit === -1 ? '∞' : $limit;
         </tbody>
     </table>
 </div>
+
+<script>
+function toggleVariantStock(id) {
+    const el  = document.getElementById('vstk-' + id);
+    const btn = event.target;
+    if (el.style.display === 'none') {
+        el.style.display = 'block';
+        btn.textContent  = 'sembunyikan';
+    } else {
+        el.style.display = 'none';
+        btn.textContent  = 'lihat detail';
+    }
+}
+</script>

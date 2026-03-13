@@ -49,9 +49,9 @@
             <?php if (empty($orders)): ?>
             <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">Tidak ada pesanan yang sesuai filter.</td></tr>
             <?php else: ?>
-                <?php foreach ($orders as $o): ?>
+                <?php $no = 1; foreach ($orders as $o): ?>
                 <tr>
-                    <td><?= $o['id'] ?></td>
+                    <td><?= $no++ ?></td>
                     <td><strong><?= htmlspecialchars($o['customer_name']) ?></strong></td>
                     <td><?= $o['customer_phone'] ?? '-' ?></td>
                     <td><?= $o['total_items'] ?> item</td>
@@ -60,7 +60,10 @@
                     <td style="white-space:nowrap"><?= date('d/m/y H:i', strtotime($o['created_at'])) ?></td>
                     <td>
                         <a href="<?= BASE_URL ?>/orders/<?= $o['id'] ?>" class="btn btn-sm">Detail</a>
-                        <a href="<?= BASE_URL ?>/orders/print-receipt/<?= $o['id'] ?>" class="btn btn-sm" target="_blank" style="background:#1a1a1a;color:white;margin-left:4px">🧾</a>
+                        <a href="<?= BASE_URL ?>/orders/print-receipt/<?= $o['id'] ?>" class="btn btn-sm" target="_blank"
+                           style="background:#1a1a1a;color:white;margin-left:4px;font-size:12px">
+                            Struk
+                        </a>
                     </td>
                 </tr>
                 <?php endforeach; ?>

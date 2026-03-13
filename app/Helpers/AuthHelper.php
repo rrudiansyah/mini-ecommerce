@@ -72,6 +72,7 @@ class AuthHelper
      */
     public static function getMenuPermissions(): array
     {
+        require_once ROOT_PATH . '/app/Helpers/PlanHelper.php';
         return [
             'dashboard' => self::can('dashboard.view'),
             'products' => [
@@ -95,14 +96,20 @@ class AuthHelper
                 'view_invoice' => self::can('orders.view_invoice'),
             ],
             'reports' => self::can('reports.view'),
+            'variants'  => self::can('variants.read'),
+            'product_stock' => [
+                'visible' => self::can('inventory.read') && PlanHelper::canFeature('inventory'),
+                'manage'  => self::can('inventory.create') || self::can('inventory.update'),
+                'stock_in'=> self::can('inventory.create'),
+            ],
             'inventory' => [
-                'visible' => self::can('inventory.read'),
+                'visible' => self::can('inventory.read') && PlanHelper::canFeature('inventory'),
                 'manage'  => self::can('inventory.create') || self::can('inventory.update'),
                 'stock_in'=> self::can('inventory.create'),
                 'logs'    => self::can('inventory.read'),
             ],
             'users' => self::can('admins.manage'),
-            'settings' => self::isSuperAdmin(), // hanya Super Admin
+            'settings' => self::can('settings.view'), // Admin toko: kelola role & permission
         ];
     }
 

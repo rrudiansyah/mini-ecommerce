@@ -40,8 +40,8 @@ $limitLabel = $limit === -1 ? '∞' : $limit;
                 <?php else: ?>
                     <?php foreach ($admins as $admin): ?>
                     <tr>
-                        <td><strong><?= htmlspecialchars($admin['name']) ?></strong></td>
-                        <td style="color:var(--muted)"><?= htmlspecialchars($admin['email']) ?></td>
+                        <td><strong><?= htmlspecialchars($admin['name'] ?? '') ?></strong></td>
+                        <td style="color:var(--muted)"><?= htmlspecialchars($admin['email'] ?? '') ?></td>
                         <td><span class="badge badge-proses"><?= htmlspecialchars($admin['roles'] ?? 'No Role') ?></span></td>
                         <td><span class="badge badge-<?= $admin['is_active'] ? 'selesai' : 'batal' ?>"><?= $admin['is_active'] ? 'Aktif' : 'Nonaktif' ?></span></td>
                         <td style="white-space:nowrap">

@@ -1,14 +1,18 @@
 <?php
 // app/Views/products/form.php
 $isEdit   = !empty($product);
-$hppType  = $product['hpp_type'] ?? 'manual';
+require_once ROOT_PATH . '/app/Helpers/PlanHelper.php';
+$hppType     = $product['hpp_type'] ?? 'manual';
+$canHppAuto  = PlanHelper::canFeature('hpp_auto');
+$canVariants = PlanHelper::canFeature('variants');
+if ($hppType === 'auto' && !$canHppAuto) $hppType = 'manual';
 $recipeMap = [];
 foreach (($recipe ?? []) as $r) {
     $recipeMap[$r['ingredient_id']] = $r;
 }
 ?>
 
-<form method="POST"
+<form method="POST" novalidate
       action="<?= BASE_URL ?>/products/<?= $isEdit ? 'update/' . $product['id'] : 'store' ?>"
       enctype="multipart/form-data">
   <?php echo $csrf_field ?? ''; ?>
@@ -77,10 +81,18 @@ foreach (($recipe ?? []) as $r) {
             </div>
           </label>
           <label style="flex:1;cursor:pointer">
-            <input type="radio" name="hpp_type" value="auto" <?= $hppType === 'auto' ? 'checked' : '' ?> onchange="switchHpp('auto')" style="display:none">
+            <input type="radio" name="hpp_type" value="auto"
+                   <?= $hppType === 'auto' ? 'checked' : '' ?>
+                   <?= !$canHppAuto ? 'disabled' : '' ?>
+                   onchange="switchHpp('auto')" style="display:none">
             <div class="hppcard <?= $hppType === 'auto' ? 'hppcard-on' : '' ?>" id="card_auto">
               <div style="font-size:22px;margin-bottom:5px">⚗️</div>
               <strong style="font-size:13px">Dari Resep Bahan</strong>
+              <?php if (!$canHppAuto): ?>
+              <span style="display:block;font-size:11px;color:#ef4444;margin-top:2px">
+                  🔒 Upgrade ke Pro
+              </span>
+              <?php endif; ?>
               <div style="font-size:11px;color:#888;margin-top:2px">Hitung otomatis dari stok bahan</div>
             </div>
           </label>
@@ -95,7 +107,28 @@ foreach (($recipe ?? []) as $r) {
         </div>
 
         <!-- Auto HPP / BOM Recipe -->
-        <div id="panel_auto" <?= $hppType === 'manual' ? 'style="display:none"' : '' ?>>
+        <!-- Stok Produk (hanya untuk HPP Manual) -->
+        <div id="panel_stock" style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:14px;margin-bottom:16px;<?= $hppType === 'auto' ? 'display:none' : '' ?>">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+                <div>
+                    <span style="font-weight:700;font-size:14px">📦 Stok Produk</span>
+                    <p style="margin:4px 0 0;font-size:12px;color:#166534">
+                        Kelola stok di menu
+                        <a href="<?= BASE_URL ?>/product-stock" target="_blank" style="font-weight:700;color:#15803d;text-decoration:underline">Stok Produk →</a>
+                    </p>
+                </div>
+                <div style="text-align:right">
+                    <?php if (isset($product['stock']) && (int)$product['stock'] >= 0): ?>
+                        <span style="font-size:20px;font-weight:700;color:#15803d"><?= (int)$product['stock'] ?></span>
+                        <span style="font-size:12px;color:#6b7280"> pcs tersisa</span>
+                    <?php else: ?>
+                        <span style="font-size:12px;color:#6b7280">⬜ Belum ditrack</span>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+                <div id="panel_auto" <?= $hppType === 'manual' ? 'style="display:none"' : '' ?>>
           <?php if (empty($ingredients)): ?>
             <div style="background:#fff8f0;border:1px solid #fed7aa;border-radius:10px;padding:14px;font-size:13px;color:#92400e">
               ⚠️ Belum ada bahan baku.
@@ -179,13 +212,242 @@ foreach (($recipe ?? []) as $r) {
     </div>
 
   </div>
-</form>
 
 <style>
 .hppcard{border:2px solid #e8e6e0;border-radius:12px;padding:14px;text-align:center;background:#fafafa;transition:all .2s}
 .hppcard-on{border-color:#2563a8;background:#eff6ff}
 .hppcard:hover{border-color:#93c5fd}
 </style>
+
+<!-- ── SECTION VARIAN PRODUK ─────────────────────────── -->
+<?php
+require_once ROOT_PATH . '/app/Helpers/PlanHelper.php';
+$canVariants  = PlanHelper::canFeature('variants');
+$hasVariants  = (int)($product['has_variants'] ?? 0);
+$variantTypes = $variantTypes ?? [];
+$variants     = $variants ?? [];
+?>
+
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;margin-bottom:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div>
+            <h3 style="margin:0;font-size:16px;font-weight:700">🎨 Varian Produk</h3>
+            <p style="margin:4px 0 0;color:#888;font-size:13px">Ukuran, warna, atau pilihan lain</p>
+        </div>
+        <?php if (!$canVariants): ?>
+        <span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">
+            🔒 Fitur Pro+
+        </span>
+        <?php endif; ?>
+    </div>
+
+    <?php if (!$canVariants): ?>
+    <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:16px;text-align:center">
+        <p style="margin:0;color:#92400e"><?= htmlspecialchars(PlanHelper::upgradeMessage('variants')) ?></p>
+    </div>
+    <?php else: ?>
+
+    <!-- Toggle has_variants -->
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:16px">
+        <input type="checkbox" name="has_variants" value="1" id="hasVariantsToggle"
+               <?= $hasVariants ? 'checked' : '' ?>
+               onchange="document.getElementById('variantSection').style.display=this.checked?'block':'none'"
+               style="width:18px;height:18px">
+        <span style="font-weight:600;font-size:14px">Produk ini memiliki varian (ukuran, warna, dll)</span>
+    </label>
+
+    <div id="variantSection" style="display:<?= $hasVariants ? 'block' : 'none' ?>">
+
+        <?php if (empty($variantTypes)): ?>
+        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:16px;margin-bottom:16px">
+            <p style="margin:0;color:#0369a1;font-size:13px">
+                ⚠️ Belum ada tipe varian. 
+                <a href="<?= BASE_URL ?>/variants" target="_blank" style="font-weight:700">Buat tipe varian dulu →</a>
+            </p>
+        </div>
+        <?php else: ?>
+
+        <!-- Builder varian -->
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:16px">
+            <h4 style="margin:0 0 12px;font-size:14px;font-weight:700">Generate Varian dari Tipe</h4>
+            <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:12px" id="typeSelectors">
+                <?php foreach ($variantTypes as $type): ?>
+                <div>
+                    <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px">
+                        <?= htmlspecialchars($type['name']) ?>
+                    </label>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px">
+                        <?php foreach ($type['options_list'] as $opt): ?>
+                        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;
+                               background:#fff;border:1.5px solid #e5e7eb;border-radius:6px;padding:4px 10px;font-size:13px">
+                            <input type="checkbox" class="opt-check" data-type="<?= $type['id'] ?>"
+                                   value="<?= $opt['id'] ?>:<?= htmlspecialchars($opt['value']) ?>">
+                            <?= htmlspecialchars($opt['value']) ?>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" onclick="generateVariants()">
+                ⚡ Generate Varian
+            </button>
+        </div>
+
+        <?php endif; ?>
+
+        <!-- Tabel varian -->
+        <table style="width:100%;border-collapse:collapse;font-size:13px" id="variantTable">
+            <thead>
+                <tr style="background:#f3f4f6">
+                    <th style="padding:8px 12px;text-align:left;font-weight:700">Varian</th>
+                    <th style="padding:8px 12px;text-align:left;font-weight:700">SKU</th>
+                    <th style="padding:8px 12px;text-align:left;font-weight:700">Harga Jual (Rp) <small style="font-weight:400;color:#888">0=pakai harga produk</small></th>
+                    <th style="padding:8px 12px;text-align:left;font-weight:700">HPP (Rp) <small style="font-weight:400;color:#888">0=tidak dihitung</small></th>
+                    <th style="padding:8px 12px;text-align:left;font-weight:700">Stok</th>
+                    <th style="padding:8px 12px;text-align:left;font-weight:700">Margin</th>
+                    <th style="padding:8px 12px;text-align:center;font-weight:700">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="variantBody">
+                <?php foreach ($variants as $i => $v): ?>
+                <tr class="variant-row">
+                    <td style="padding:6px 8px">
+                        <input type="text" name="variant_label[]" value="<?= htmlspecialchars($v['label']) ?>"
+                               placeholder="misal: M / Merah-L"
+                               style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px">
+                    </td>
+                    <td style="padding:6px 8px">
+                        <input type="text" name="variant_sku[]" value="<?= htmlspecialchars($v['sku'] ?? '') ?>"
+                               placeholder="SKU-001"
+                               style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px">
+                    </td>
+                    <td style="padding:6px 8px">
+                        <input type="number" name="variant_price[]" value="<?= $v['price'] ?>"
+                               min="0" step="500" placeholder="0" onchange="recalcVariantMargin(this)"
+                               style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px">
+                    </td>
+                    <td style="padding:6px 8px">
+                        <input type="number" name="variant_hpp[]" value="<?= $v['hpp'] ?? 0 ?>"
+                               min="0" step="500" placeholder="0" onchange="recalcVariantMargin(this)"
+                               style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px">
+                    </td>
+                    <td style="padding:6px 8px">
+                        <input type="number" name="variant_stock[]" value="<?= $v['stock'] ?>"
+                               min="0" placeholder="0"
+                               style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px">
+                    </td>
+                    <td style="padding:6px 8px">
+                        <?php
+                            $vPrice = (float)$v['price'];
+                            $vHpp   = (float)($v['hpp'] ?? 0);
+                            $vMargin = ($vPrice > 0 && $vHpp > 0) ? round(($vPrice - $vHpp) / $vPrice * 100) : null;
+                        ?>
+                        <?php if ($vMargin !== null): ?>
+                        <span style="font-size:12px;font-weight:700;color:<?= $vMargin >= 20 ? '#16a34a' : ($vMargin >= 0 ? '#d97706' : '#dc2626') ?>">
+                            <?= $vMargin ?>%
+                        </span>
+                        <?php else: ?>
+                        <span style="font-size:12px;color:#9ca3af">—</span>
+                        <?php endif; ?>
+                    </td>
+                    <td style="padding:6px 8px;text-align:center">
+                        <button type="button" onclick="this.closest('tr').remove()"
+                                style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:4px 10px;cursor:pointer">
+                            🗑
+                        </button>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+
+        <button type="button" class="btn btn-sm" style="margin-top:10px" onclick="addVariantRow()">
+            + Tambah Baris
+        </button>
+    </div>
+    <?php endif; ?>
+</div>
+
+<script>
+function addVariantRow(label='', price='0', stock='0', sku='', hpp='0') {
+    const row = `<tr class="variant-row">
+        <td style="padding:6px 8px">
+            <input type="text" name="variant_label[]" value="${label}" placeholder="misal: M / Merah-L"
+                   style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px">
+        </td>
+        <td style="padding:6px 8px">
+            <input type="text" name="variant_sku[]" value="${sku}" placeholder="SKU-001"
+                   style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px">
+        </td>
+        <td style="padding:6px 8px">
+            <input type="number" name="variant_price[]" value="${price}" min="0" step="500" placeholder="0"
+                   onchange="recalcVariantMargin(this)"
+                   style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px">
+        </td>
+        <td style="padding:6px 8px">
+            <input type="number" name="variant_hpp[]" value="${hpp}" min="0" step="500" placeholder="0"
+                   onchange="recalcVariantMargin(this)"
+                   style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px">
+        </td>
+        <td style="padding:6px 8px">
+            <input type="number" name="variant_stock[]" value="${stock}" min="0" placeholder="0"
+                   style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px">
+        </td>
+        <td class="variant-margin-cell" style="padding:6px 8px;font-size:12px;font-weight:700;color:#9ca3af">—</td>
+        <td style="padding:6px 8px;text-align:center">
+            <button type="button" onclick="this.closest('tr').remove()"
+                    style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:4px 10px;cursor:pointer">🗑</button>
+        </td>
+    </tr>`;
+    document.getElementById('variantBody').insertAdjacentHTML('beforeend', row);
+}
+
+function recalcVariantMargin(el) {
+    const row    = el.closest('tr');
+    const price  = parseFloat(row.querySelector('input[name="variant_price[]"]').value) || 0;
+    const hpp    = parseFloat(row.querySelector('input[name="variant_hpp[]"]').value)   || 0;
+    const cell   = row.querySelector('.variant-margin-cell');
+    if (!cell) return;
+    if (price > 0 && hpp > 0) {
+        const margin = Math.round((price - hpp) / price * 100);
+        const color  = margin >= 20 ? '#16a34a' : (margin >= 0 ? '#d97706' : '#dc2626');
+        cell.textContent = margin + '%';
+        cell.style.color = color;
+    } else {
+        cell.textContent = '—';
+        cell.style.color = '#9ca3af';
+    }
+}
+
+function generateVariants() {
+    // Ambil semua tipe yang ada opsi terpilih
+    const typeMap = {};
+    document.querySelectorAll('.opt-check:checked').forEach(cb => {
+        const type = cb.dataset.type;
+        if (!typeMap[type]) typeMap[type] = [];
+        typeMap[type].push(cb.value.split(':')[1]);
+    });
+
+    const groups = Object.values(typeMap);
+    if (groups.length === 0) {
+        alert('Pilih minimal satu opsi dulu!');
+        return;
+    }
+
+    // Cartesian product
+    const combos = groups.reduce((acc, group) => {
+        const result = [];
+        acc.forEach(a => group.forEach(b => result.push(a ? a + ' / ' + b : b)));
+        return result;
+    }, ['']);
+
+    // Hapus varian existing, tambah yang baru
+    document.getElementById('variantBody').innerHTML = '';
+    combos.forEach(label => addVariantRow(label));
+}
+</script>
+
 <script>
 // Inline ingredient options for dynamic rows
 const ingOpts = [
@@ -221,8 +483,9 @@ function rowSelChange(sel) {
 document.querySelectorAll('.rsel').forEach(rowSelChange);
 
 function switchHpp(t) {
-  document.getElementById('panel_manual').style.display = t==='manual'?'':'none';
-  document.getElementById('panel_auto').style.display   = t==='auto'  ?'':'none';
+  document.getElementById('panel_manual').style.display = t==='manual' ? '' : 'none';
+  document.getElementById('panel_stock').style.display  = t==='manual' ? '' : 'none';
+  document.getElementById('panel_auto').style.display   = t==='auto'   ? '' : 'none';
   document.getElementById('card_manual').className = 'hppcard'+(t==='manual'?' hppcard-on':'');
   document.getElementById('card_auto').className   = 'hppcard'+(t==='auto'  ?' hppcard-on':'');
   recalc();
@@ -268,3 +531,26 @@ function recalc() {
 document.getElementById('inputPrice')?.addEventListener('input',recalc);
 recalc();
 </script>
+
+<script>
+document.querySelector('form[novalidate]').addEventListener('submit', function(e) {
+    const name  = document.querySelector('input[name="name"]');
+    const price = document.querySelector('input[name="price"]');
+    if (!name.value.trim()) {
+        e.preventDefault(); name.focus(); alert('Nama produk wajib diisi'); return;
+    }
+    if (!price.value || parseFloat(price.value) <= 0) {
+        e.preventDefault(); price.focus(); alert('Harga wajib diisi'); return;
+    }
+    const hasVariants = document.getElementById('hasVariants')?.checked;
+    if (hasVariants) {
+        const labels = document.querySelectorAll('input[name="variant_label[]"]');
+        for (const l of labels) {
+            if (!l.value.trim()) {
+                e.preventDefault(); l.focus(); alert('Nama varian tidak boleh kosong'); return;
+            }
+        }
+    }
+});
+</script>
+</form>

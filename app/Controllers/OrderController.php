@@ -42,13 +42,28 @@ class OrderController extends Controller
     public function create(): void
     {
         $this->requirePermission('orders.create');
-        $products = $this->productModel->available($_SESSION['store_id']);
+        $storeId    = $_SESSION['store_id'];
+        $products   = $this->productModel->available($storeId);
+        $catModel   = $this->model('CategoryModel');
+        $categories = $catModel->byStore($storeId);
+
+        // Attach variants ke setiap produk
+        require_once ROOT_PATH . '/app/Models/VariantModel.php';
+        $variantModel = new VariantModel();
+        foreach ($products as &$p) {
+            $p['variants'] = !empty($p['has_variants'])
+                ? $variantModel->byProduct((int)$p['id'])
+                : [];
+        }
+        unset($p);
+
         $this->view('layouts/main', [
-            'pageTitle' => 'Buat Pesanan Baru',
-            'content' => 'orders/form',
-            'products' => $products,
-            'order' => null,
-            'csrf_field'  => $this->csrfField(),
+            'pageTitle'  => 'Buat Pesanan Baru',
+            'content'    => 'orders/form',
+            'products'   => $products,
+            'categories' => $categories,
+            'order'      => null,
+            'csrf_field' => $this->csrfField(),
         ]);
     }
 
@@ -95,6 +110,10 @@ class OrderController extends Controller
         $total = 0;
         $orderItems = [];
 
+        $variantIds    = is_array($_POST['variant_id']    ?? null) ? $_POST['variant_id']    : [];
+        $variantLabels = is_array($_POST['variant_label'] ?? null) ? $_POST['variant_label'] : [];
+        $priceOverride = is_array($_POST['price_override'] ?? null) ? $_POST['price_override'] : [];
+
         foreach ($productIds as $index => $productId) {
             $product = $this->productModel->find((int)$productId);
             if (!$product || !isset($quantities[$index])) continue;
@@ -102,12 +121,21 @@ class OrderController extends Controller
             $qty = (int)$quantities[$index];
             if ($qty <= 0) continue;
 
-            $subtotal = $product['price'] * $qty;
-            $total += $subtotal;
+            // Pakai harga varian jika ada, fallback ke harga produk
+            $price = isset($priceOverride[$index]) && (float)$priceOverride[$index] > 0
+                ? (float)$priceOverride[$index]
+                : (float)$product['price'];
+
+            $variantId    = !empty($variantIds[$index])    ? (int)$variantIds[$index]    : null;
+            $variantLabel = !empty($variantLabels[$index]) ? trim($variantLabels[$index]) : null;
+
+            $total += $price * $qty;
             $orderItems[] = [
-                'product_id' => (int)$productId,
-                'qty' => $qty,
-                'price' => $product['price'],
+                'product_id'    => (int)$productId,
+                'qty'           => $qty,
+                'price'         => $price,
+                'variant_id'    => $variantId,
+                'variant_label' => $variantLabel,
             ];
         }
 
@@ -139,14 +167,22 @@ class OrderController extends Controller
 
         // Create order items
         foreach ($orderItems as $item) {
-            $item['order_id'] = $orderId;
-            $stmt = $db->prepare("INSERT INTO order_items (order_id, product_id, qty, price) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$item['order_id'], $item['product_id'], $item['qty'], $item['price']]);
+            $stmt = $db->prepare(
+                "INSERT INTO order_items (order_id, product_id, qty, price, variant_id, variant_label)
+                  VALUES (?, ?, ?, ?, ?, ?)"
+            );
+            $stmt->execute([
+                $orderId,
+                $item['product_id'],
+                $item['qty'],
+                $item['price'],
+                $item['variant_id'],
+                $item['variant_label'],
+            ]);
         }
 
         $this->flash('success', 'Pesanan berhasil dibuat!');
-        // redirect back to detail page and trigger print automatically
-        $this->redirect('orders/' . $orderId . '?print=1');
+        $this->redirect('orders/' . $orderId);
     }
 
     public function show(string $id): void
@@ -172,31 +208,87 @@ class OrderController extends Controller
 
         $this->orderModel->updateStatus((int)$id, $status);
 
-        // Kurangi stok otomatis saat pertama kali jadi 'selesai'
+        // Kurangi stok saat pertama kali jadi 'selesai'
         if ($status === 'selesai' && !$wasSelesai) {
             $this->_deductStockForOrder((int)$id);
+        }
+
+        // Restore stok jika dibatalkan dari status selesai
+        if ($status === 'batal' && $wasSelesai) {
+            $this->_restoreStockForOrder((int)$id);
         }
 
         $this->flash('success', 'Status pesanan diperbarui.');
         $this->redirect('orders/' . $id);
     }
 
-    // ── Helper: kurangi stok bahan baku sesuai resep ────────
+    // ── Helper: kurangi stok saat order selesai ─────────────
     private function _deductStockForOrder(int $orderId): void
     {
-        $storeId   = $_SESSION['store_id'];
-        $adminId   = $_SESSION['admin_id'] ?? 0;
-        $items     = $this->orderModel->detail($orderId);
-        $recipeModel = $this->model('RecipeModel');
+        $storeId      = $_SESSION['store_id'];
+        $adminId      = $_SESSION['admin_id'] ?? 0;
+        $items        = $this->orderModel->detail($orderId);
+        $recipeModel  = $this->model('RecipeModel');
+        $productModel = $this->model('ProductModel');
 
         foreach ($items as $item) {
-            $recipeModel->deductForOrder(
-                (int)$item['product_id'],
-                (int)$item['qty'],
-                $storeId,
-                $orderId,
-                $adminId
-            );
+            $product = $productModel->find((int)$item['product_id']);
+            if (!$product) continue;
+
+            $qty = (int)$item['qty'];
+
+            if (!empty($item['variant_id'])) {
+                // Produk punya varian → kurangi stok varian
+                require_once ROOT_PATH . '/app/Models/VariantModel.php';
+                $variantModel = new VariantModel();
+                $variantModel->deductStock((int)$item['variant_id'], $qty);
+            } elseif ($product['hpp_type'] === 'auto') {
+                // HPP Resep → kurangi stok bahan baku
+                $recipeModel->deductForOrder(
+                    (int)$item['product_id'],
+                    $qty,
+                    $storeId,
+                    $orderId,
+                    $adminId
+                );
+            } elseif ((int)($product['stock'] ?? -1) >= 0) {
+                // HPP Manual + stok ditrack → kurangi stok produk
+                $stockModel = $this->model('ProductStockModel');
+                $stockModel->deductStock((int)$item['product_id'], $qty, $storeId, $orderId, $adminId);
+            }
+            // stock = -1 → tidak ditrack, skip
+        }
+    }
+
+    // ── Helper: restore stok saat order dibatalkan ────────
+    private function _restoreStockForOrder(int $orderId): void
+    {
+        $storeId      = $_SESSION['store_id'];
+        $items        = $this->orderModel->detail($orderId);
+        $productModel = $this->model('ProductModel');
+
+        foreach ($items as $item) {
+            if (!empty($item['variant_id'])) {
+                // Restore stok varian
+                require_once ROOT_PATH . '/app/Models/VariantModel.php';
+                $variantModel = new VariantModel();
+                $db = Database::getInstance();
+                $stmt = $db->prepare("SELECT stock FROM product_variants WHERE id = ?");
+                $stmt->execute([(int)$item['variant_id']]);
+                $row = $stmt->fetch();
+                if ($row) {
+                    $newStock = (int)$row['stock'] + (int)$item['qty'];
+                    $db->prepare("UPDATE product_variants SET stock = ? WHERE id = ?")
+                       ->execute([$newStock, (int)$item['variant_id']]);
+                }
+                continue;
+            }
+            $product = $productModel->find((int)$item['product_id']);
+            if (!$product) continue;
+            if ($product['hpp_type'] !== 'auto' && (int)($product['stock'] ?? -1) >= 0) {
+                $stockModel = $this->model('ProductStockModel');
+                $stockModel->restoreStock((int)$item['product_id'], (int)$item['qty'], $storeId);
+            }
         }
     }
 

@@ -101,7 +101,16 @@ abstract class Model
     // ── Error Handler ──────────────────────────────────────────────
     protected function handleError(PDOException $e, string $context = ""): never
     {
-        $code    = (int) $e->getCode();
+        // PDO error code bisa berupa SQLSTATE string (misal "42S22") atau MySQL int
+        $rawCode = $e->getCode();
+        $code    = is_numeric($rawCode) ? (int)$rawCode : 0;
+
+        // Ambil MySQL error code dari errorInfo jika ada
+        $errorInfo = $e->errorInfo ?? [];
+        if (!empty($errorInfo[1])) {
+            $code = (int)$errorInfo[1];
+        }
+
         $message = $this->friendlyMessage($code, $e->getMessage());
 
         // Log error ke file (tidak ditampilkan ke user)

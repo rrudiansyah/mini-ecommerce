@@ -23,8 +23,11 @@ class PlanHelper
                 'admins'   => 1,
             ],
             'features' => [
-                'inventory'  => false,
-                'export'     => false,
+                'inventory'        => false,
+                'export'           => false,
+                'variants'         => false,
+                'hpp_manual'       => true,   // HPP input manual ✅
+                'hpp_auto'         => false,  // HPP dari resep bahan ❌
                 'reports_advanced' => false,
             ],
         ],
@@ -37,8 +40,11 @@ class PlanHelper
                 'admins'   => 5,
             ],
             'features' => [
-                'inventory'  => true,
-                'export'     => true,
+                'inventory'        => true,
+                'export'           => true,
+                'variants'         => false,  // Varian hanya Bisnis
+                'hpp_manual'       => true,   // HPP input manual ✅
+                'hpp_auto'         => true,   // HPP dari resep bahan ✅
                 'reports_advanced' => true,
             ],
         ],
@@ -51,8 +57,11 @@ class PlanHelper
                 'admins'   => -1,   // unlimited
             ],
             'features' => [
-                'inventory'  => true,
-                'export'     => true,
+                'inventory'        => true,
+                'export'           => true,
+                'variants'         => true,   // Varian produk ✅
+                'hpp_manual'       => true,   // HPP input manual ✅
+                'hpp_auto'         => true,   // HPP dari resep bahan ✅
                 'reports_advanced' => true,
             ],
         ],
@@ -140,6 +149,9 @@ class PlanHelper
             'admins'    => 'Batas pengguna paket ' . self::planName() . ' tercapai.',
             'inventory' => 'Fitur Stok & HPP tersedia mulai paket Pro.',
             'export'    => 'Fitur Export tersedia mulai paket Pro.',
+            'variants'  => 'Fitur Varian Produk tersedia mulai paket Bisnis.',
+            'hpp_manual'=> 'Fitur HPP Manual tersedia di semua paket.',
+            'hpp_auto'  => 'Fitur HPP dari Resep Bahan tersedia mulai paket Pro.',
         ];
         return ($messages[$resource] ?? 'Fitur ini tidak tersedia di paket Anda.')
              . ' Hubungi Super Admin untuk upgrade.';

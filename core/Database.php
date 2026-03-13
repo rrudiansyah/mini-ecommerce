@@ -15,6 +15,8 @@ class Database
             ];
             try {
                 self::$instance = new PDO($dsn, DB_USER, DB_PASS, $options);
+                // Matikan strict mode agar ENUM & date tidak error pada data lama
+                self::$instance->exec("SET SESSION sql_mode = 'NO_ENGINE_SUBSTITUTION'");
             } catch (PDOException $e) {
                 die(json_encode(['error' => 'Database connection failed: ' . $e->getMessage()]));
             }

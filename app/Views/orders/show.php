@@ -30,7 +30,12 @@
             <tbody>
             <?php foreach ($items as $item): ?>
             <tr>
-                <td><?= htmlspecialchars($item['product_name']) ?></td>
+                <td>
+                    <?= htmlspecialchars($item['product_name']) ?>
+                    <?php if (!empty($item['variant_label'])): ?>
+                    <span style="font-size:12px;color:#6b7280;display:block">(<?= htmlspecialchars($item['variant_label']) ?>)</span>
+                    <?php endif; ?>
+                </td>
                 <td>Rp <?= number_format($item['price'], 0, ',', '.') ?></td>
                 <td><?= $item['qty'] ?></td>
                 <td><strong>Rp <?= number_format($item['price'] * $item['qty'], 0, ',', '.') ?></strong></td>
