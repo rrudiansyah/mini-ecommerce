@@ -121,3 +121,11 @@
         📊 Laporan Bahan & HPP →
     </a>
 </div>
+
+<?php if (($menuPerms['variants'] ?? false)): ?>
+<a href="<?= BASE_URL ?>/reports/variants" style="display:block;background:#fdf4ff;border:1.5px solid #e879f9;border-radius:12px;padding:20px;text-decoration:none;transition:transform .2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+    <div style="font-size:32px;margin-bottom:8px">🎨</div>
+    <div style="font-weight:700;font-size:15px;color:#1f2937">Stok Varian</div>
+    <div style="font-size:13px;color:#9ca3af;margin-top:4px">Pantau stok per ukuran/warna</div>
+</a>
+<?php endif; ?>

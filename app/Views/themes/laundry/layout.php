@@ -757,7 +757,7 @@
     <?php $first = true; foreach ($menu as $catId => $cat): ?>
     <div class="services-grid cat-section <?= $first ? '' : 'hidden-cat' ?>" id="cat-<?= $catId ?>">
         <?php foreach ($cat['products'] as $p): ?>
-        <div class="service-card" onclick="addToOrder(<?= $p['id'] ?>, '<?= htmlspecialchars($p['name'] ?? '', ENT_QUOTES) ?>', <?= $p['price'] ?>, '<?= htmlspecialchars($cat['icon'] ?? '', ENT_QUOTES) ?>')">
+        <div class="service-card" <?php if(!empty($p['has_variants'])): ?>onclick="openVariantModal(<?=$p['id']?>,'<?=htmlspecialchars($p['name']??'',ENT_QUOTES)?>',<?=$p['price']?>,'<?=htmlspecialchars($cat['icon']??'',ENT_QUOTES)?>',<?=htmlspecialchars(json_encode(array_values($p['variants']??[])),ENT_QUOTES)?>)"<?php else: ?>onclick="addToOrder(<?=$p['id']?>,'<?=htmlspecialchars($p['name']??'',ENT_QUOTES)?>',<?=$p['price']?>,'<?=htmlspecialchars($cat['icon']??'',ENT_QUOTES)?>')"<?php endif; ?>>
             <span class="service-icon"><?= htmlspecialchars($cat['icon'] ?? '') ?></span>
             <div class="service-cat"><?= htmlspecialchars($cat['name'] ?? '') ?></div>
             <div class="service-name"><?= htmlspecialchars($p['name'] ?? '') ?></div>
@@ -769,7 +769,7 @@
                     Rp <?= number_format($p['price'], 0, ',', '.') ?>
                     <small>/kg</small>
                 </div>
-                <button class="add-btn" onclick="event.stopPropagation(); addToOrder(<?= $p['id'] ?>, '<?= htmlspecialchars($p['name'] ?? '', ENT_QUOTES) ?>', <?= $p['price'] ?>, '<?= htmlspecialchars($cat['icon'] ?? '', ENT_QUOTES) ?>')">+</button>
+                <button class="add-btn" <?php if(!empty($p['has_variants'])): ?>onclick="event.stopPropagation();openVariantModal(<?=$p['id']?>,'<?=htmlspecialchars($p['name']??'',ENT_QUOTES)?>',<?=$p['price']?>,'<?=htmlspecialchars($cat['icon']??'',ENT_QUOTES)?>',<?=htmlspecialchars(json_encode(array_values($p['variants']??[])),ENT_QUOTES)?>)"<?php else: ?>onclick="event.stopPropagation();addToOrder(<?=$p['id']?>,'<?=htmlspecialchars($p['name']??'',ENT_QUOTES)?>',<?=$p['price']?>,'<?=htmlspecialchars($cat['icon']??'',ENT_QUOTES)?>')"<?php endif; ?>>+</button>
             </div>
         </div>
         <?php endforeach; ?>
@@ -1079,7 +1079,7 @@ async function submitOrder() {
     const pickup  = document.getElementById('custPickup').value;
     const note    = document.getElementById('custNote').value.trim();
 
-    const items = Object.values(cart).map(i => ({ product_id: i.id, qty: i.qty }));
+    const items = Object.values(cart).map(i => ({ product_id: i.id, qty: i.qty, variant_id: i.variant_id||null, variant_label: i.variant_label||'' }));
 
     btn.disabled    = true;
     btn.textContent = 'Memproses...';
@@ -1139,6 +1139,87 @@ function showToast(msg, type = '') {
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2500);
 }
+</script>
+
+<!-- ── MODAL PILIH VARIAN ─────────────────────────────────── -->
+<div id="variantModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;align-items:flex-end;justify-content:center">
+    <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 id="vmProductName" style="margin:0;font-size:18px;font-weight:700"></h3>
+            <button onclick="closeVariantModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888">✕</button>
+        </div>
+        <div id="vmVariantList" style="display:flex;flex-direction:column;gap:10px"></div>
+        <p style="text-align:center;color:#9ca3af;font-size:12px;margin-top:12px">Pilih varian untuk melanjutkan</p>
+    </div>
+</div>
+
+<script>
+// ── Variant Modal ─────────────────────────────────────────
+let _vmProduct = null;
+
+function openVariantModal(productId, name, basePrice, image, variants) {
+    _vmProduct = { id: productId, name, basePrice, image };
+    document.getElementById('vmProductName').textContent = name;
+
+    const list = document.getElementById('vmVariantList');
+    list.innerHTML = variants.map(v => {
+        const price   = v.price > 0 ? v.price : basePrice;
+        const stock   = parseInt(v.stock);
+        const outOfStock = stock === 0;
+        const priceLabel = price !== basePrice
+            ? 'Rp ' + price.toLocaleString('id-ID')
+            : 'Rp ' + basePrice.toLocaleString('id-ID');
+        const stockLabel = outOfStock ? '⛔ Habis' : (stock <= 5 ? '⚠️ Sisa ' + stock : '✅ Tersedia');
+
+        return `<button onclick="${outOfStock ? '' : `addVariantToCart(${v.id},'${v.label.replace(/'/g,"\\'")}',${price})`}"
+            style="display:flex;justify-content:space-between;align-items:center;
+                   padding:14px 16px;border-radius:10px;border:1.5px solid ${outOfStock ? '#e5e7eb' : '#e5e7eb'};
+                   background:${outOfStock ? '#f9fafb' : '#fff'};cursor:${outOfStock ? 'not-allowed' : 'pointer'};
+                   opacity:${outOfStock ? '0.5' : '1'};width:100%;text-align:left;
+                   transition:border-color .15s,background .15s"
+            onmouseover="if(!${outOfStock})this.style.borderColor='var(--primary,#3b82f6)'"
+            onmouseout="this.style.borderColor='#e5e7eb'">
+            <div>
+                <div style="font-weight:600;font-size:15px">${v.label}</div>
+                <div style="font-size:13px;color:#6b7280;margin-top:2px">${stockLabel}</div>
+            </div>
+            <div style="font-weight:700;font-size:15px;color:var(--primary,#3b82f6)">${priceLabel}</div>
+        </button>`;
+    }).join('');
+
+    document.getElementById('variantModal').style.display = 'flex';
+}
+
+function closeVariantModal() {
+    document.getElementById('variantModal').style.display = 'none';
+    _vmProduct = null;
+}
+
+function addVariantToCart(variantId, variantLabel, price) {
+    if (!_vmProduct) return;
+    const cartKey = _vmProduct.id + '_' + variantId;
+    if (cart[cartKey]) {
+        cart[cartKey].qty++;
+    } else {
+        cart[cartKey] = {
+            id:           _vmProduct.id,
+            variant_id:   variantId,
+            variant_label: variantLabel,
+            name:         _vmProduct.name + ' (' + variantLabel + ')',
+            price:        price,
+            image:        _vmProduct.image,
+            qty:          1,
+        };
+    }
+    closeVariantModal();
+    renderCart();
+    showToast('✅ ' + _vmProduct.name + ' (' + variantLabel + ') ditambahkan!');
+}
+
+// Tutup modal klik overlay
+document.getElementById('variantModal').addEventListener('click', function(e) {
+    if (e.target === this) closeVariantModal();
+});
 </script>
 
 </body>
