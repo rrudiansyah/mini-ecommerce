@@ -142,6 +142,59 @@ self.addEventListener('sync', event => {
 });
 
 async function syncPendingOrders() {
-    // Placeholder untuk sync data offline
-    console.log('[SW] Background sync: orders');
+    try {
+        // Ambil pending orders dari IndexedDB/localStorage
+        const pendingOrders = await getPendingOrders();
+
+        if (pendingOrders.length === 0) {
+            console.log('[SW] No pending orders to sync');
+            return;
+        }
+
+        // Coba kirim ke server
+        for (const order of pendingOrders) {
+            try {
+                const response = await fetch('/orders/store', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Offline-Sync': 'true'
+                    },
+                    body: JSON.stringify(order)
+                });
+
+                if (response.ok) {
+                    // Hapus dari pending
+                    await removePendingOrder(order.id);
+                    console.log('[SW] Order synced:', order.id);
+                }
+            } catch (e) {
+                console.log('[SW] Failed to sync order:', order.id, e);
+            }
+        }
+
+        // Notify client bahwa sync selesai
+        const clients = await self.clients.matchAll();
+        clients.forEach(client => {
+            client.postMessage({
+                type: 'SYNC_COMPLETE',
+                data: { syncedCount: pendingOrders.length }
+            });
+        });
+
+    } catch (err) {
+        console.log('[SW] Background sync error:', err);
+    }
+}
+
+// Helper untuk ambil pending orders (placeholder)
+async function getPendingOrders() {
+    // Akan diimplementasikan di client-side untuk store di IndexedDB
+    return [];
+}
+
+// Helper untuk hapus pending order
+async function removePendingOrder(orderId) {
+    // Akan diimplementasikan di client-side
+    return true;
 }

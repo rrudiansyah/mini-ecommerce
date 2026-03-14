@@ -4,6 +4,9 @@ unset($_SESSION['flash']);
 require_once ROOT_PATH . '/app/Helpers/AuthHelper.php';
 $menuPerms = AuthHelper::getMenuPermissions();
 $currentUrl = $_SERVER['REQUEST_URI'] ?? '';
+
+// PWA VAPID keys
+$vapidPublicKey = $_ENV['VAPID_PUBLIC_KEY'] ?? 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
 ?><!DOCTYPE html>
 <html lang="id">
 <head>
@@ -335,11 +338,15 @@ sidebar.querySelectorAll('nav a').forEach(a => {
     padding: 14px 16px;
     z-index: 999;
     box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    display: flex !important;
+    display: none;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
     animation: slideUp 0.3s ease;
+}
+
+.pwa-install-banner.visible {
+    display: flex !important;
 }
 
 @keyframes slideUp {
@@ -397,15 +404,43 @@ sidebar.querySelectorAll('nav a').forEach(a => {
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+    pointer-events: auto;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.pwa-btn-install:hover {
+    background: #d4b347;
+}
+
+.pwa-btn-install:active {
+    background: #b8941f;
 }
 
 .pwa-btn-dismiss {
     background: transparent;
     color: #6b7280;
     border: none;
-    font-size: 16px;
+    font-size: 18px;
     cursor: pointer;
-    padding: 4px;
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+    pointer-events: auto;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.pwa-btn-dismiss:hover {
+    color: #9ca3af;
+}
+
+.pwa-btn-dismiss:active {
+    color: #d1d5db;
 }
 
 @media (min-width: 768px) {
@@ -446,72 +481,122 @@ const installBanner = document.getElementById('pwaInstallBanner');
 const installBtn    = document.getElementById('pwaInstallBtn');
 const dismissBtn    = document.getElementById('pwaDismissBtn');
 
-// Simpan dismissed state di sessionStorage (tidak butuh HTTPS)
-function isDismissed() {
-    try { return sessionStorage.getItem('pwa-dismissed') === '1'; } catch(e) { return false; }
+// Gunakan localStorage agar persistent
+function isInstalledOrDismissed() {
+    const dismissed = localStorage.getItem('pwa-banner-dismissed');
+    const installed = localStorage.getItem('pwa-app-installed');
+    return dismissed === '1' || installed === '1';
 }
-function setDismissed() {
-    try { sessionStorage.setItem('pwa-dismissed', '1'); } catch(e) {}
+
+function markDismissed() {
+    localStorage.setItem('pwa-banner-dismissed', '1');
+}
+
+function markInstalled() {
+    localStorage.setItem('pwa-app-installed', '1');
+}
+
+// Deteksi jika file sudah di-install
+function isAppInstalled() {
+    // Cek multiple indicators untuk akurasi lebih baik
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                         window.navigator.standalone === true ||
+                         document.referrer.includes('android-app://');
+
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isSafari = /safari/i.test(navigator.userAgent) && !/chrome|crios/i.test(navigator.userAgent);
+
+    return isStandalone || (isIOS && localStorage.getItem('pwa-app-installed') === '1');
 }
 
 // Deteksi iOS Safari
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const isSafari = /safari/i.test(navigator.userAgent) && !/chrome|crios/i.test(navigator.userAgent);
-const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+// Helper function untuk show/hide banner
+function showInstallBanner() {
+    if (installBanner && !isAppInstalled() && !isInstalledOrDismissed()) {
+        installBanner.classList.add('visible');
+    }
+}
+
+function hideInstallBanner() {
+    if (installBanner) {
+        installBanner.classList.remove('visible');
+    }
+}
 
 // iOS Safari — tampilkan petunjuk manual
-if (isIOS && isSafari && !isInStandaloneMode && !isDismissed()) {
+if (isIOS && isSafari && !isAppInstalled()) {
     setTimeout(() => {
-        if (installBanner) {
-            if (installBtn) {
-                installBtn.textContent = 'Cara Install';
-                installBtn.addEventListener('click', () => {
-                    alert('Cara install di iOS Safari:\n\n1. Tap tombol Share (⬆️) di bawah\n2. Scroll ke bawah\n3. Tap "Add to Home Screen"\n4. Tap "Add"');
-                    if (installBanner) installBanner.style.display = 'none';
-                    setDismissed();
-                }, { once: true });
-            }
-            installBanner.style.display = 'flex';
+        if (installBtn) {
+            installBtn.textContent = 'Cara Install';
+            installBtn.addEventListener('click', () => {
+                alert('Cara install di iOS Safari:\n\n1. Tap tombol Share (⬆️) di bawah\n2. Scroll ke bawah\n3. Tap "Add to Home Screen"\n4. Tap "Add"');
+                hideInstallBanner();
+                markDismissed();
+            });
         }
-    }, 3000);
+        showInstallBanner();
+    }, 2000);
 }
 
 // Android/Chrome — gunakan beforeinstallprompt
 window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredPrompt = e;
-    if (!isDismissed() && !isInStandaloneMode) {
-        setTimeout(() => {
-            if (installBanner) installBanner.style.display = 'flex';
-        }, 3000);
+    if (!isAppInstalled() && !isInstalledOrDismissed()) {
+        setTimeout(showInstallBanner, 2000);
     }
 });
 
+// Install button click handler (Android/Chrome)
 if (installBtn && !isIOS) {
-    installBtn.addEventListener('click', async () => {
+    installBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
         if (!deferredPrompt) return;
+
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
+
+        if (outcome === 'accepted') {
+            markInstalled();
+        }
+
         deferredPrompt = null;
-        if (installBanner) installBanner.style.display = 'none';
-        setDismissed();
+        hideInstallBanner();
+        markDismissed();
     });
 }
 
-// Tombol X — fix dismiss
+// Dismiss button click handler
 if (dismissBtn) {
     dismissBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (installBanner) installBanner.style.display = 'none';
-        setDismissed();
+        hideInstallBanner();
+        markDismissed();
     });
 }
 
-// Sembunyikan banner jika sudah terinstall
+// Detect when app is installed
 window.addEventListener('appinstalled', () => {
-    if (installBanner) installBanner.style.display = 'none';
-    setDismissed();
+    markInstalled();
+    hideInstallBanner();
+    markDismissed();
+    console.log('[PWA] App installed successfully');
+});
+
+// Monitor display mode changes
+const displayModeQuery = window.matchMedia('(display-mode: standalone)');
+displayModeQuery.addListener((e) => {
+    if (e.matches) {
+        markInstalled();
+        hideInstallBanner();
+        console.log('[PWA] Standalone mode detected');
+    }
 });
 
 // ── Push Notification Setup ───────────────────────────────────────
@@ -524,9 +609,8 @@ async function subscribePushNotification() {
 
         if (permission !== 'granted') return;
 
-        // VAPID public key — ganti dengan key Anda sendiri
-        // Generate di: https://web-push-codelab.glitch.me/
-        const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+        // VAPID public key dari server configuration
+        const VAPID_PUBLIC_KEY = '<?= htmlspecialchars($vapidPublicKey) ?>';
 
         const subscription = await reg.pushManager.subscribe({
             userVisibleOnly: true,

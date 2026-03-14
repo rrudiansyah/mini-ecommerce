@@ -111,3 +111,8 @@ $router->post('/superadmin/settings/roles/{id}/permission',             'SuperAd
 $router->get('/demo',              'DemoController', 'index');
 $router->get('/demo/{niche}',      'DemoController', 'preview');
 $router->post('/demo/{niche}/order','DemoController', 'demoOrder');
+
+// ── Push Notifications (PWA) ──────────────────────────────
+$router->post('/push/subscribe',    'PushNotificationController', 'subscribe');
+$router->post('/push/unsubscribe',  'PushNotificationController', 'unsubscribe');
+$router->post('/push/send',         'PushNotificationController', 'sendNotification');
