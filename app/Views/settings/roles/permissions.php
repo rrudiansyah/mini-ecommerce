@@ -235,8 +235,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json',
                 },
-                body: 'permission_id=' + permissionId + '&action=' + action
+                body: 'permission_id=' + permissionId + '&action=' + action + '&_csrf_token=' + document.querySelector('meta[name="csrf-token"]').content
             })
             .then(response => response.json())
             .then(data => {
