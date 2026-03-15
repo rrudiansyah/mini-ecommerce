@@ -146,6 +146,8 @@ class SuperAdminSettingController extends Controller
             'store'          => $store,
             'roles'          => $roles,
             'allPermissions' => $allPermissions,
+            'csrf_field'     => $this->csrfField(),
+            'csrf_token'     => $this->csrfToken(),
         ]);
     }
 

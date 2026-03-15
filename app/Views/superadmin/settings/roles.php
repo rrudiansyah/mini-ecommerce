@@ -80,11 +80,16 @@ async function togglePerm(cb, roleId, permId) {
 
     try {
         const fd = new FormData();
+        fd.append('_csrf_token', '<?= htmlspecialchars($csrf_token ?? '', ENT_QUOTES, 'UTF-8') ?>');
         fd.append('permission_id', permId);
         fd.append('action', action);
 
         const res  = await fetch(`<?= BASE_URL ?>/superadmin/settings/roles/${roleId}/permission`, {
-            method: 'POST', body: fd
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json'
+            },
+            body: fd
         });
         const data = await res.json();
 
@@ -99,7 +104,7 @@ async function togglePerm(cb, roleId, permId) {
         }
     } catch (e) {
         cb.checked = !cb.checked;
-        alert('Koneksi gagal.');
+        alert('Koneksi gagal: ' + e.message);
     }
 }
 </script>
