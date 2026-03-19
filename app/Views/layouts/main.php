@@ -28,11 +28,6 @@ $vapidPublicKey = $_ENV['VAPID_PUBLIC_KEY'] ?? 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-
 </head>
 <body>
 
-<!-- Mobile sidebar toggle -->
-<button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle menu">
-    <span></span><span></span><span></span>
-</button>
-
 <!-- Overlay -->
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -134,6 +129,10 @@ $vapidPublicKey = $_ENV['VAPID_PUBLIC_KEY'] ?? 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-
 <!-- Main -->
 <main class="main-content">
     <div class="topbar">
+        <!-- Tombol menu di dalam topbar, bukan floating -->
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
         <h1><?= htmlspecialchars($pageTitle ?? '') ?></h1>
         <div class="topbar-right">
             <div class="topbar-user">
@@ -256,7 +255,10 @@ sidebar.querySelectorAll('nav a').forEach(a => {
     background: #1a1a2e;
     border-top: 1px solid #2d2d4e;
     z-index: 1000;
+    /* Safe area untuk iPhone notch/home indicator */
     padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
 }
 
 .bottom-nav-item {
@@ -265,13 +267,15 @@ sidebar.querySelectorAll('nav a').forEach(a => {
     align-items: center;
     justify-content: center;
     flex: 1;
-    padding: 8px 4px;
+    padding: 10px 4px 8px;
     text-decoration: none;
     color: #6b7280;
     font-size: 10px;
     position: relative;
     transition: color 0.2s;
     min-width: 0;
+    /* Minimal tap area */
+    min-height: 52px;
 }
 
 .bottom-nav-item.active {
@@ -317,12 +321,6 @@ sidebar.querySelectorAll('nav a').forEach(a => {
 @media (max-width: 767px) {
     .bottom-nav {
         display: flex;
-    }
-    .main-content {
-        padding-bottom: calc(70px + env(safe-area-inset-bottom)) !important;
-    }
-    .sidebar-toggle {
-        display: flex !important;
     }
 }
 
