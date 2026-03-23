@@ -47,6 +47,11 @@ class Router
                 }
 
                 try {
+                    // Load ApiController dulu jika controller yang dipanggil adalah turunannya
+                    $apiBaseFile = ROOT_PATH . '/app/Controllers/ApiController.php';
+                    if (file_exists($apiBaseFile)) {
+                        require_once $apiBaseFile;
+                    }
                     require_once $controllerFile;
                     $ctrl = new $action['controller']();
 

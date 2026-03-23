@@ -20,6 +20,12 @@ session_start();
 // ── Bootstrap ────────────────────────────────────────────────────
 require_once dirname(__DIR__) . '/config/database.php';
 
+// ── Composer Autoload ─────────────────────────────────────────────
+$vendorAutoload = ROOT_PATH . '/vendor/autoload.php';
+if (file_exists($vendorAutoload)) {
+    require_once $vendorAutoload;
+}
+
 // ── Buat folder storage otomatis ─────────────────────────────────
 foreach (['/storage', '/storage/logs', '/storage/rate_limit'] as $dir) {
     $full = ROOT_PATH . $dir;

@@ -116,3 +116,21 @@ $router->post('/demo/{niche}/order','DemoController', 'demoOrder');
 $router->post('/push/subscribe',    'PushNotificationController', 'subscribe');
 $router->post('/push/unsubscribe',  'PushNotificationController', 'unsubscribe');
 $router->post('/push/send',         'PushNotificationController', 'sendNotification');
+
+// ── API Routes ────────────────────────────────────────
+$router->post('/api/auth/login', 'AuthApiController', 'login');
+$router->get('/api/auth/me',     'AuthApiController', 'me');
+$router->get('/api/dashboard', 'DashboardApiController', 'index');
+
+$router->get('/api/orders',                  'OrderApiController', 'index');
+$router->get('/api/orders/detail',           'OrderApiController', 'show');
+$router->post('/api/orders/update-status',   'OrderApiController', 'updateStatus');
+
+$router->get('/api/products',                    'ProductApiController', 'index');
+$router->post('/api/products/toggle-available',  'ProductApiController', 'toggleAvailable');
+$router->post('/api/products/update-stock',      'ProductApiController', 'updateStock');
+
+$router->get('/api/reports', 'ReportApiController', 'index');
+
+$router->post('/api/orders/store', 'OrderApiController', 'store');
+$router->post('/api/orders/update-payment', 'OrderApiController', 'updatePaymentStatus');
